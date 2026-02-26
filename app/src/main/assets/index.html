@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <title>AlphaEdge — AI Stock Trader</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap');
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#080c14;--surface:#0d1421;--surface2:#111b2e;--surface3:#162034;
+      --border:rgba(255,255,255,0.06);--border-active:rgba(59,158,255,0.35);
+      --text:#e8edf5;--text-muted:#5a6a85;--text-dim:#3a4a65;
+      --accent:#3b9eff;--accent-glow:rgba(59,158,255,0.3);
+      --green:#00d26a;--red:#ff4757;--yellow:#f5a623;
+      --font-body:'DM Mono',monospace;--font-display:'Syne',sans-serif;
+    }
+    html,body,#root{height:100%;overflow:hidden}
+    body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:13px;line-height:1.6}
+    .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+    .header{background:rgba(8,12,20,0.97);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;height:52px;flex-shrink:0;position:relative;z-index:100}
+    .logo{font-family:var(--font-display);font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:7px}
+    .logo-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent-glow);animation:pulse 2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.85)}}
+    .header-spacer{flex:1}
+    .hm{display:flex;flex-direction:column;align-items:flex-end}
+    .hml{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px}
+    .hmv{font-size:13px;font-weight:600;color:var(--text)}
+    .toggle-btn{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-family:var(--font-body);font-size:10px;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;color:var(--text-muted)}
+    .sw{width:30px;height:17px;background:var(--surface3);border-radius:9px;position:relative;transition:background .3s;border:1px solid var(--border)}
+    .sw.on{background:var(--green);border-color:transparent}
+    .sk{position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:white;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+    .sw.on .sk{transform:translateX(13px)}
+    .main-scroll{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+    .card-title{font-family:var(--font-display);font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .mc{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px}
+    .ml{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:6px}
+    .mv{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text)}
+    .ms{font-size:10px;color:var(--text-muted);margin-top:3px}
+    .up{color:var(--green)}.down{color:var(--red)}.neutral{color:var(--accent)}
+    .stock-row{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:6px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s}
+    .stock-row:active{background:var(--surface3);border-color:var(--border-active)}
+    .sr-left{display:flex;flex-direction:column;gap:3px}
+    .sr-ticker{font-family:var(--font-display);font-size:15px;font-weight:800;color:#fff}
+    .sr-name{font-size:10px;color:var(--text-dim)}
+    .sr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+    .sr-price{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text)}
+    .sr-change{font-size:11px;font-weight:600}
+    .badge{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.4px}
+    .score-pill{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700}
+    .score-bar-wrap{display:flex;align-items:center;gap:6px}
+    .score-bar-track{flex:1;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+    .score-bar-fill{height:100%;border-radius:2px}
+    .bottom-nav{display:flex;background:rgba(8,12,20,.97);border-top:1px solid var(--border);flex-shrink:0}
+    .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;gap:3px;transition:all .15s;border-top:2px solid transparent}
+    .bnav-item.active{border-top-color:var(--accent);color:var(--accent)}
+    .bnav-icon{font-size:18px}
+    .bnav-label{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim)}
+    .bnav-item.active .bnav-label{color:var(--accent)}
+    .stock-detail-header{padding:0 0 14px;border-bottom:1px solid var(--border);margin-bottom:14px}
+    .sd-ticker{font-family:var(--font-display);font-size:28px;font-weight:800;color:#fff}
+    .sd-name{font-size:11px;color:var(--text-muted);margin-top:2px;margin-bottom:10px}
+    .sd-price-row{display:flex;align-items:baseline;gap:10px}
+    .sd-price{font-family:var(--font-display);font-size:26px;font-weight:700;color:#fff}
+    .sd-change{font-size:13px;font-weight:600}
+    .conviction-wrap{display:flex;flex-direction:column;align-items:center;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px}
+    .conviction-circle{position:relative;width:100px;height:100px;margin-bottom:10px}
+    .conviction-circle svg{transform:rotate(-90deg)}
+    .conviction-number{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-display);font-size:24px;font-weight:800;color:#fff}
+    .trow{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--border)}
+    .trow:last-child{border-bottom:none}
+    .trow-label{font-size:10px;color:var(--text-dim)}
+    .trow-value{font-size:12px;font-weight:500;color:var(--text);text-align:right}
+    .reasoning-item{display:flex;align-items:flex-start;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-muted)}
+    .reasoning-item:last-child{border-bottom:none}
+    .rdot{width:5px;height:5px;border-radius:50%;margin-top:5px;flex-shrink:0}
+    .news-item{padding:10px 0;border-bottom:1px solid var(--border)}
+    .news-item:last-child{border-bottom:none}
+    .news-title{font-size:11px;color:var(--text);line-height:1.4;margin-bottom:4px}
+    .news-meta{font-size:9px;color:var(--text-dim);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+    .modal{background:var(--surface);border:1px solid var(--border-active);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;max-width:480px;box-shadow:0 -20px 60px rgba(0,0,0,.5)}
+    .modal-title{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:18px;color:#fff}
+    .form-label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:5px;display:block}
+    .form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:var(--font-body);font-size:16px;outline:none;-webkit-appearance:none}
+    .form-input:focus{border-color:var(--border-active)}
+    .btn-group{display:flex;gap:8px;margin-top:18px}
+    .btn{flex:1;padding:13px 16px;border-radius:9px;border:1px solid var(--border);font-family:var(--font-body);font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;-webkit-tap-highlight-color:transparent;transition:all .15s}
+    .btn:active{transform:scale(.97)}
+    .btn-buy{background:rgba(0,210,106,.15);color:var(--green);border-color:rgba(0,210,106,.3)}
+    .btn-sell{background:rgba(255,71,87,.15);color:var(--red);border-color:rgba(255,71,87,.3)}
+    .btn-cancel{background:var(--surface2);color:var(--text-muted)}
+    .btn-trade{background:rgba(59,158,255,.15);color:var(--accent);border:1px solid rgba(59,158,255,.3);border-radius:7px;padding:8px 16px;font-family:var(--font-body);font-size:11px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;text-transform:uppercase;letter-spacing:.5px}
+    .trade-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+    .trade-row:last-child{border-bottom:none}
+    .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px;color:var(--text-muted);font-size:12px}
+    .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .toast-wrap{position:fixed;top:60px;right:12px;z-index:300;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+    .toast{background:var(--surface2);border:1px solid var(--border-active);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--text);max-width:260px;animation:slidein .3s ease;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+    @keyframes slidein{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+    .toast-t{font-weight:700;margin-bottom:2px}
+    .toast-m{color:var(--text-muted);font-size:10px}
+    ::-webkit-scrollbar{width:3px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+    .empty-state{text-align:center;padding:40px 20px;color:var(--text-dim);font-size:12px}
+    .pos-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+    .pos-row:active{border-color:var(--border-active)}
+    .pos-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+    .pos-ticker{font-family:var(--font-display);font-size:16px;font-weight:800;color:#fff}
+    .pos-shares{font-size:10px;color:var(--text-dim);margin-top:2px}
+    .pos-pnl{font-family:var(--font-display);font-size:16px;font-weight:700;text-align:right}
+    .pos-pnlpct{font-size:10px;text-align:right;margin-top:2px}
+    .pos-bottom{display:flex;justify-content:space-between;align-items:center}
+    .pos-detail{font-size:10px;color:var(--text-dim)}
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+const ALPHA_VANTAGE_KEY = "TBG2JQT5P4D47XK8";
+const INITIAL_CASH = 100000;
+const WATCHLIST = ["AAPL","MSFT","NVDA","TSLA","GOOGL","AMZN","META","JPM","V","UNH"];
+const ACTION_COLORS = { BUY:"#00d26a", HOLD:"#3b9eff", TRIM:"#f5a623", EXIT:"#ff4757" };
+const ACTION_BG = { BUY:"rgba(0,210,106,0.15)", HOLD:"rgba(59,158,255,0.15)", TRIM:"rgba(245,166,35,0.15)", EXIT:"rgba(255,71,87,0.15)" };
+
+// ── SCORING ENGINE ────────────────────────────────────────────
+function scoreStock(fund, tech, sent) {
+  let score = 50; const reasons = [];
+  if (fund) {
+    const pe = parseFloat(fund.PERatio||0), eg = parseFloat(fund.QuarterlyEarningsGrowthYOY||0)*100;
+    const rg = parseFloat(fund.QuarterlyRevenueGrowthYOY||0)*100, pm = parseFloat(fund.ProfitMargin||0)*100;
+    const de = parseFloat(fund.DebtToEquityRatio||0);
+    if(pe>0&&pe<20){score+=8;reasons.push("Attractive P/E ratio")}else if(pe>40){score-=5;reasons.push("High P/E valuation risk")}
+    if(eg>20){score+=10;reasons.push(`Strong EPS growth +${eg.toFixed(0)}%`)}else if(eg<0){score-=8;reasons.push("Declining earnings")}
+    if(rg>15){score+=8;reasons.push(`Revenue growth +${rg.toFixed(0)}%`)}else if(rg<0){score-=5;reasons.push("Revenue contraction")}
+    if(pm>20){score+=7;reasons.push("High profit margins")}else if(pm<5){score-=3;reasons.push("Thin margins")}
+    if(de<0.5){score+=7;reasons.push("Strong balance sheet")}else if(de>2){score-=7;reasons.push("High leverage risk")}
+  }
+  if (tech) {
+    const {rsi,macdSignal,sma20,sma50,currentPrice,volumeRatio} = tech;
+    if(rsi>0&&rsi<40){score+=10;reasons.push("Oversold RSI — potential reversal")}
+    else if(rsi>70){score-=8;reasons.push("Overbought RSI")}
+    else if(rsi>=40&&rsi<=60){score+=4;reasons.push("Neutral RSI momentum")}
+    if(macdSignal==="BULLISH"){score+=10;reasons.push("MACD bullish crossover")}
+    else if(macdSignal==="BEARISH"){score-=10;reasons.push("MACD bearish crossover")}
+    if(currentPrice>sma20&&sma20>sma50){score+=10;reasons.push("Price above rising MAs — uptrend")}
+    else if(currentPrice<sma20&&sma20<sma50){score-=8;reasons.push("Downtrend — below all MAs")}
+    if(volumeRatio>1.5){score+=5;reasons.push("Above-average volume confirmation")}
+  }
+  if (sent) {
+    const s = sent.score||0;
+    if(s>0.6){score+=15;reasons.push(`Strongly bullish sentiment (${sent.label})`)}
+    else if(s>0.3){score+=8;reasons.push("Mildly positive sentiment")}
+    else if(s<-0.3){score-=10;reasons.push("Negative market sentiment")}
+    else if(s<-0.6){score-=15;reasons.push(`Strongly bearish sentiment (${sent.label})`)}
+  }
+  score = Math.max(0,Math.min(100,score));
+  let action="HOLD", posPct=5;
+  if(score>=75){action="BUY";posPct=Math.min(15,(score-70)/2+5)}
+  else if(score>=55){action="HOLD";posPct=5}
+  else if(score>=35){action="TRIM";posPct=3}
+  else{action="EXIT";posPct=0}
+  return {score:Math.round(score),action,positionPct:Math.round(posPct),rationale:reasons.length?reasons:["Insufficient data for full analysis"]};
+}
+
+// ── PAPER TRADING ENGINE ──────────────────────────────────────
+function createOrder({ticker,type,side,quantity,price,portfolioState}) {
+  const id = `ORD-${Date.now()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+  const fillPrice = type==="MARKET" ? price*(side==="BUY"?1.001:0.999) : price;
+  const total = fillPrice*quantity;
+  if(side==="BUY"&&total>portfolioState.cash) return {error:"Insufficient cash"};
+  return {trade:{id,ticker,side,quantity,fillPrice:parseFloat(fillPrice.toFixed(2)),total:parseFloat(total.toFixed(2)),timestamp:new Date().toISOString(),status:"FILLED",type}};
+}
+
+function applyTrade(prev, trade) {
+  const s = {...prev, trades:[trade,...prev.trades], positions:{...prev.positions}};
+  if(trade.side==="BUY") {
+    s.cash -= trade.total;
+    const ex = s.positions[trade.ticker];
+    if(ex){const tq=ex.quantity+trade.quantity;s.positions[trade.ticker]={...ex,quantity:tq,avgCost:(ex.avgCost*ex.quantity+trade.total)/tq}}
+    else s.positions[trade.ticker]={ticker:trade.ticker,quantity:trade.quantity,avgCost:trade.fillPrice,entryDate:trade.timestamp};
+  } else {
+    s.cash += trade.total;
+    const ex = s.positions[trade.ticker];
+    if(ex){const rem=ex.quantity-trade.quantity;if(rem<=0)delete s.positions[trade.ticker];else s.positions[trade.ticker]={...ex,quantity:rem}}
+  }
+  s.cash = parseFloat(s.cash.toFixed(2));
+  return s;
+}
+
+// ── DATA INGESTION ────────────────────────────────────────────
+const cache = {};
+async function fetchAV(fn, symbol, extra="") {
+  const key=`${fn}_${symbol}`;
+  if(cache[key]&&Date.now()-cache[key].ts<300000) return cache[key].data;
+  try {
+    const r = await fetch(`https://www.alphavantage.co/query?function=${fn}&symbol=${symbol}${extra}&apikey=${ALPHA_VANTAGE_KEY}`);
+    const data = await r.json();
+    cache[key]={data,ts:Date.now()};
+    return data;
+  } catch { return null; }
+}
+
+async function fetchQuote(s) {
+  const d = await fetchAV("GLOBAL_QUOTE",s);
+  if(!d||!d["Global Quote"]) return null;
+  const q = d["Global Quote"];
+  return {price:parseFloat(q["05. price"]),change:parseFloat(q["09. % change"]),volume:parseInt(q["06. volume"]),high:parseFloat(q["03. high"]),low:parseFloat(q["04. low"])};
+}
+
+async function fetchFund(s) { return await fetchAV("OVERVIEW",s); }
+
+async function fetchTech(s, quote) {
+  const [rd,md,s20,s50] = await Promise.all([
+    fetchAV("RSI",s,"&interval=daily&time_period=14&series_type=close"),
+    fetchAV("MACD",s,"&interval=daily&series_type=close"),
+    fetchAV("SMA",s,"&interval=daily&time_period=20&series_type=close"),
+    fetchAV("SMA",s,"&interval=daily&time_period=50&series_type=close"),
+  ]);
+  let rsi=50,macdSignal="NEUTRAL",sma20=quote?.price||0,sma50=quote?.price||0;
+  try{const rs=rd?.["Technical Analysis: RSI"];if(rs){const k=Object.keys(rs)[0];rsi=parseFloat(rs[k]["RSI"])}}catch{}
+  try{const ms=md?.["Technical Analysis: MACD"];if(ms){const ks=Object.keys(ms);const cur=ms[ks[0]],prev=ms[ks[1]];const ch=parseFloat(cur["MACD_Hist"]),ph=parseFloat(prev?.["MACD_Hist"]||"0");macdSignal=ch>0&&ch>ph?"BULLISH":ch<0&&ch<ph?"BEARISH":"NEUTRAL"}}catch{}
+  try{const ss20=s20?.["Technical Analysis: SMA"];if(ss20)sma20=parseFloat(Object.values(ss20)[0]["SMA"])}catch{}
+  try{const ss50=s50?.["Technical Analysis: SMA"];if(ss50)sma50=parseFloat(Object.values(ss50)[0]["SMA"])}catch{}
+  return {rsi,macdSignal,sma20,sma50,currentPrice:quote?.price||0,volumeRatio:(quote?.volume||0)/15000000};
+}
+
+async function fetchSent(s) {
+  const d = await fetchAV("NEWS_SENTIMENT",s,`&tickers=${s}&limit=10`);
+  if(!d||!d.feed) return {score:0,label:"Neutral",articles:[]};
+  const arts = d.feed.slice(0,5);
+  const avg = arts.reduce((sum,a)=>{const t=a.ticker_sentiment?.find(x=>x.ticker===s);return sum+parseFloat(t?.ticker_sentiment_score||"0")},0)/Math.max(arts.length,1);
+  return {score:avg,label:avg>0.35?"Bullish":avg<-0.35?"Bearish":"Neutral",articles:arts};
+}
+
+// ── SCORE BAR ─────────────────────────────────────────────────
+function ScoreBar({score}) {
+  const c = score>=65?"var(--green)":score>=45?"var(--accent)":"var(--red)";
+  return <div className="score-bar-wrap">
+    <div className="score-bar-track"><div className="score-bar-fill" style={{width:`${score}%`,background:c}}/></div>
+    <span style={{fontSize:11,color:c,fontWeight:700,minWidth:22,textAlign:"right"}}>{score}</span>
+  </div>;
+}
+
+// ── CONVICTION CIRCLE ─────────────────────────────────────────
+function ConvictionCircle({score}) {
+  const c = score>=70?"var(--green)":score>=45?"var(--accent)":"var(--red)";
+  const circ = 2*Math.PI*48, dash = (score/100)*circ;
+  return <div className="conviction-wrap">
+    <div className="conviction-circle">
+      <svg width="100" height="100" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="none" stroke="var(--surface3)" strokeWidth="7"/>
+        <circle cx="50" cy="50" r="48" fill="none" stroke={c} strokeWidth="7" strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{filter:`drop-shadow(0 0 5px ${c})`}}/>
+      </svg>
+      <div className="conviction-number" style={{color:c}}>{score}</div>
+    </div>
+    <div style={{fontSize:10,color:"var(--text-dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Conviction Score</div>
+  </div>;
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────
+function App() {
+  const [autoTrade,setAutoTrade]=useState(false);
+  const [view,setView]=useState("dashboard");
+  const [selectedTicker,setSelectedTicker]=useState(null);
+  const [portfolio,setPortfolio]=useState({cash:INITIAL_CASH,positions:{},trades:[]});
+  const [stockData,setStockData]=useState({});
+  const [loadingTicker,setLoadingTicker]=useState(null);
+  const [tradeModal,setTradeModal]=useState(null);
+  const [toasts,setToasts]=useState([]);
+  const [tradeQty,setTradeQty]=useState("10");
+  const [analyzed,setAnalyzed]=useState(new Set());
+  const [queue,setQueue]=useState([...WATCHLIST]);
+  const autoRef = useRef(autoTrade);
+  useEffect(()=>{autoRef.current=autoTrade},[autoTrade]);
+
+  const toast = useCallback((title,msg)=>{
+    const id=Date.now();
+    setToasts(t=>[...t,{id,title,msg}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4000);
+  },[]);
+
+  useEffect(()=>{
+    if(queue.length===0) return;
+    const ticker=queue[0];
+    if(analyzed.has(ticker)){setQueue(q=>q.slice(1));return}
+    let cancelled=false;
+    const run=async()=>{
+      setLoadingTicker(ticker);
+      const [quote,fund,sent]= await Promise.all([fetchQuote(ticker),fetchFund(ticker),fetchSent(ticker)]);
+      const tech=await fetchTech(ticker,quote);
+      if(cancelled) return;
+      const scoring=scoreStock(fund,tech,sent);
+      setStockData(d=>({...d,[ticker]:{quote,fund,tech,sent,scoring,updatedAt:Date.now()}}));
+      setAnalyzed(s=>new Set([...s,ticker]));
+      setQueue(q=>q.slice(1));
+      setLoadingTicker(null);
+      if(autoRef.current&&scoring.action==="BUY"&&quote){
+        setPortfolio(prev=>{
+          const qty=Math.max(1,Math.floor((prev.cash*scoring.positionPct/100)/quote.price));
+          if(qty<1||prev.positions[ticker]) return prev;
+          const {trade,error}=createOrder({ticker,type:"MARKET",side:"BUY",quantity:qty,price:quote.price,portfolioState:prev});
+          if(error) return prev;
+          toast("🤖 Auto Trade",`Bought ${qty} ${ticker} @ $${trade.fillPrice}`);
+          return applyTrade(prev,trade);
+        });
+      }
+    };
+    const delay = queue.indexOf(ticker)===0?100:13000;
+    const t=setTimeout(run,delay);
+    return()=>{cancelled=true;clearTimeout(t)};
+  },[queue,analyzed,toast]);
+
+  const posVal=Object.entries(portfolio.positions).reduce((sum,[tk,pos])=>{
+    const p=stockData[tk]?.quote?.price||pos.avgCost;
+    return sum+p*pos.quantity;
+  },0);
+  const totalVal=portfolio.cash+posVal;
+  const pnl=totalVal-INITIAL_CASH;
+  const pnlPct=(pnl/INITIAL_CASH)*100;
+
+  function selectTicker(t){
+    setSelectedTicker(t);setView("stock");
+    if(!analyzed.has(t)&&!queue.includes(t)) setQueue(q=>[t,...q]);
+  }
+
+  function handleTrade(side){
+    if(!tradeModal) return;
+    const {ticker}=tradeModal;
+    const price=stockData[ticker]?.quote?.price;
+    if(!price){toast("Error","No price data");return}
+    const qty=parseInt(tradeQty);
+    if(!qty||qty<1){toast("Error","Invalid quantity");return}
+    const {trade,error}=createOrder({ticker,type:"MARKET",side,quantity:qty,price,portfolioState:portfolio});
+    if(error){toast("Failed",error);return}
+    setPortfolio(prev=>applyTrade(prev,trade));
+    toast(`${side==="BUY"?"🟢":"🔴"} Executed`,`${side} ${qty} ${ticker} @ $${trade.fillPrice}`);
+    setTradeModal(null);
+  }
+
+  const sorted=[...WATCHLIST].sort((a,b)=>(stockData[b]?.scoring?.score||0)-(stockData[a]?.scoring?.score||0));
+
+  return <div className="app">
+    {/* HEADER */}
+    <header className="header">
+      <div className="logo"><div className="logo-dot"/>AlphaEdge</div>
+      <div className="header-spacer"/>
+      {loadingTicker&&<div style={{fontSize:9,color:"var(--text-dim)",display:"flex",alignItems:"center",gap:5}}><div className="spinner" style={{width:12,height:12,borderWidth:1.5}}/>{loadingTicker}</div>}
+      <div className="hm" style={{marginLeft:10}}>
+        <span className="hml">Value</span>
+        <span className="hmv">${totalVal.toLocaleString("en",{maximumFractionDigits:0})}</span>
+      </div>
+      <button className="toggle-btn" onClick={()=>setAutoTrade(v=>!v)} style={{marginLeft:8}}>
+        <span style={{color:autoTrade?"var(--green)":"var(--text-dim)",fontSize:9}}>{autoTrade?"AUTO ON":"AUTO OFF"}</span>
+        <div className={`sw ${autoTrade?"on":""}`}><div className="sk"/></div>
+      </button>
+    </header>
+
+    {/* MAIN */}
+    <div className="main-scroll">
+      {view==="dashboard"&&<DashboardView portfolio={portfolio} stockData={stockData} sorted={sorted} pnl={pnl} pnlPct={pnlPct} posVal={posVal} totalVal={totalVal} onSelect={selectTicker} onTrade={setTradeModal}/>}
+      {view==="stock"&&selectedTicker&&<StockView ticker={selectedTicker} data={stockData[selectedTicker]} position={portfolio.positions[selectedTicker]} onTrade={setTradeModal}/>}
+      {view==="positions"&&<PositionsView portfolio={portfolio} stockData={stockData} onSelect={selectTicker} onTrade={setTradeModal}/>}
+      {view==="trades"&&<TradesView trades={portfolio.trades}/>}
+    </div>
+
+    {/* BOTTOM NAV */}
+    <nav className="bottom-nav">
+      {[{id:"dashboard",icon:"◈",label:"Markets"},{id:"positions",icon:"⊞",label:"Positions"},{id:"trades",icon:"⇄",label:"History"}].map(n=>
+        <div key={n.id} className={`bnav-item ${view===n.id?"active":""}`} onClick={()=>setView(n.id)}>
+          <div className="bnav-icon">{n.icon}</div>
+          <div className="bnav-label">{n.label}</div>
+        </div>
+      )}
+    </nav>
+
+    {/* TRADE MODAL */}
+    {tradeModal&&<div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setTradeModal(null)}>
+      <div className="modal">
+        <div className="modal-title">Trade {tradeModal.ticker}</div>
+        <div style={{marginBottom:14}}>
+          <div className="form-label">Current Price</div>
+          <div style={{fontFamily:"var(--font-display)",fontSize:24,fontWeight:700,color:"#fff"}}>${stockData[tradeModal.ticker]?.quote?.price?.toFixed(2)||"—"}</div>
+        </div>
+        <div style={{marginBottom:14}}>
+          <label className="form-label">Quantity (shares)</label>
+          <input className="form-input" type="number" min="1" value={tradeQty} onChange={e=>setTradeQty(e.target.value)}/>
+        </div>
+        <div style={{fontSize:10,color:"var(--text-dim)",marginBottom:4}}>
+          Est. total: ${((stockData[tradeModal.ticker]?.quote?.price||0)*parseInt(tradeQty||"0")).toLocaleString("en",{maximumFractionDigits:2})}
+        </div>
+        <div style={{fontSize:10,color:"var(--text-muted)"}}>Cash: ${portfolio.cash.toLocaleString("en",{maximumFractionDigits:0})}</div>
+        <div className="btn-group">
+          <button className="btn btn-buy" onClick={()=>handleTrade("BUY")}>Buy</button>
+          <button className="btn btn-sell" onClick={()=>handleTrade("SELL")}>Sell</button>
+          <button className="btn btn-cancel" onClick={()=>setTradeModal(null)}>Cancel</button>
+        </div>
+      </div>
+    </div>}
+
+    {/* TOASTS */}
+    <div className="toast-wrap">{toasts.map(t=><div key={t.id} className="toast"><div className="toast-t">{t.title}</div><div className="toast-m">{t.msg}</div></div>)}</div>
+  </div>;
+}
+
+// ── VIEWS ─────────────────────────────────────────────────────
+function DashboardView({portfolio,stockData,sorted,pnl,pnlPct,posVal,totalVal,onSelect,onTrade}) {
+  const signals = sorted.filter(t=>stockData[t]?.scoring);
+  return <>
+    <div className="grid2">
+      <div className="mc"><div className="ml">Portfolio</div><div className="mv">${totalVal.toLocaleString("en",{maximumFractionDigits:0})}</div><div className="ms">Paper account</div></div>
+      <div className="mc"><div className="ml">Total P&L</div><div className={`mv ${pnl>=0?"up":"down"}`}>{pnl>=0?"+":""}{pnl.toFixed(0)}</div><div className="ms">{pnlPct>=0?"+":""}{pnlPct.toFixed(2)}%</div></div>
+      <div className="mc"><div className="ml">Cash</div><div className="mv">${portfolio.cash.toLocaleString("en",{maximumFractionDigits:0})}</div><div className="ms">{((portfolio.cash/totalVal)*100).toFixed(0)}% of portfolio</div></div>
+      <div className="mc"><div className="ml">Invested</div><div className="mv">${posVal.toLocaleString("en",{maximumFractionDigits:0})}</div><div className="ms">{Object.keys(portfolio.positions).length} positions</div></div>
+    </div>
+
+    <div className="card">
+      <div className="card-title">⚡ AI Signals</div>
+      {signals.length===0
+        ? <div className="loading"><div className="spinner"/><span>Analyzing stocks… rate-limit safe (12s/call)</span></div>
+        : sorted.map(ticker=>{
+            const d=stockData[ticker];
+            if(!d?.scoring) return <div key={ticker} className="stock-row" onClick={()=>onSelect(ticker)}>
+              <div className="sr-left"><div className="sr-ticker">{ticker}</div><div className="sr-name">Loading…</div></div>
+              <div className="spinner" style={{width:16,height:16,borderWidth:1.5}}/>
+            </div>;
+            const {quote,scoring}=d;
+            return <div key={ticker} className="stock-row" onClick={()=>onSelect(ticker)}>
+              <div className="sr-left">
+                <div className="sr-ticker">{ticker}</div>
+                <div style={{display:"flex",gap:5,alignItems:"center",marginTop:2}}>
+                  <span className="badge" style={{background:ACTION_BG[scoring.action],color:ACTION_COLORS[scoring.action]}}>{scoring.action}</span>
+                  <span style={{fontSize:9,color:"var(--text-dim)"}}>{scoring.positionPct}% size</span>
+                </div>
+              </div>
+              <div className="sr-right">
+                <div className="sr-price">${quote?.price?.toFixed(2)||"—"}</div>
+                <div className={`sr-change ${(quote?.change||0)>=0?"up":"down"}`}>{(quote?.change||0)>=0?"▲":"▼"}{Math.abs(quote?.change||0).toFixed(2)}%</div>
+                <ScoreBar score={scoring.score}/>
+              </div>
+            </div>;
+          })
+      }
+    </div>
+
+    {portfolio.trades.length>0&&<div className="card">
+      <div className="card-title">↺ Recent Trades</div>
+      {portfolio.trades.slice(0,5).map(t=><div key={t.id} className="trade-row">
+        <div>
+          <span style={{fontFamily:"var(--font-display)",fontWeight:800,color:"#fff",marginRight:8}}>{t.ticker}</span>
+          <span style={{color:t.side==="BUY"?"var(--green)":"var(--red)",fontWeight:700,fontSize:11}}>{t.side}</span>
+          <span style={{color:"var(--text-muted)",fontSize:11,marginLeft:8}}>{t.quantity} @ ${t.fillPrice}</span>
+        </div>
+        <div style={{textAlign:"right"}}>
+          <div style={{fontSize:12,fontWeight:600,color:"var(--text)"}}>${t.total.toFixed(0)}</div>
+          <div style={{fontSize:9,color:"var(--text-dim)"}}>{new Date(t.timestamp).toLocaleTimeString()}</div>
+        </div>
+      </div>)}
+    </div>}
+  </>;
+}
+
+function StockView({ticker,data,position,onTrade}) {
+  if(!data) return <div className="card"><div className="loading"><div className="spinner"/><span>Loading {ticker}…</span></div></div>;
+  const {quote,fund:f,tech:t,sent,scoring}=data;
+  const sc = scoring.score>=70?"var(--green)":scoring.score>=45?"var(--accent)":"var(--red)";
+  return <>
+    <div className="card">
+      <div className="stock-detail-header">
+        <div className="sd-ticker">{ticker}</div>
+        <div className="sd-name">{f?.Name||ticker} · {f?.Exchange||""}</div>
+        <div className="sd-price-row">
+          <div className="sd-price">${quote?.price?.toFixed(2)||"—"}</div>
+          <div className={`sd-change ${(quote?.change||0)>=0?"up":"down"}`}>{(quote?.change||0)>=0?"▲":"▼"}{Math.abs(quote?.change||0).toFixed(2)}%</div>
+        </div>
+        <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap",alignItems:"center"}}>
+          <span className="badge" style={{background:ACTION_BG[scoring.action],color:ACTION_COLORS[scoring.action],fontSize:11,padding:"3px 10px"}}>{scoring.action}</span>
+          {f?.Sector&&<span style={{fontSize:10,padding:"3px 8px",background:"var(--surface3)",borderRadius:4,color:"var(--text-muted)"}}>{f.Sector}</span>}
+          {position&&<span style={{fontSize:10,padding:"3px 8px",background:"rgba(59,158,255,0.12)",borderRadius:4,color:"var(--accent)"}}>{position.quantity} shares held</span>}
+          <button className="btn-trade" onClick={()=>onTrade({ticker})}>Trade</button>
+        </div>
+      </div>
+
+      <div className="grid2" style={{gap:10}}>
+        <ConvictionCircle score={scoring.score}/>
+        <div style={{display:"flex",flexDirection:"column",gap:0,background:"var(--surface2)",borderRadius:10,padding:12,border:"1px solid var(--border)"}}>
+          <div style={{fontSize:10,color:"var(--text-dim)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Technicals</div>
+          <div className="trow"><span className="trow-label">RSI</span><span className="trow-value" style={{color:t?.rsi<30?"var(--green)":t?.rsi>70?"var(--red)":"var(--accent)"}}>{t?.rsi?.toFixed(1)||"—"}</span></div>
+          <div className="trow"><span className="trow-label">MACD</span><span className="trow-value" style={{color:t?.macdSignal==="BULLISH"?"var(--green)":t?.macdSignal==="BEARISH"?"var(--red)":"var(--text-muted)"}}>{t?.macdSignal||"—"}</span></div>
+          <div className="trow"><span className="trow-label">SMA20</span><span className="trow-value">${t?.sma20?.toFixed(2)||"—"}</span></div>
+          <div className="trow"><span className="trow-label">SMA50</span><span className="trow-value">${t?.sma50?.toFixed(2)||"—"}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div className="card">
+      <div className="card-title">📊 Fundamentals</div>
+      <div className="trow"><span className="trow-label">P/E Ratio</span><span className="trow-value">{parseFloat(f?.PERatio||0).toFixed(1)||"—"}</span></div>
+      <div className="trow"><span className="trow-label">EPS Growth</span><span className="trow-value" style={{color:parseFloat(f?.QuarterlyEarningsGrowthYOY||0)>0?"var(--green)":"var(--red)"}}>{f?.QuarterlyEarningsGrowthYOY?(parseFloat(f.QuarterlyEarningsGrowthYOY)*100).toFixed(1)+"%":"—"}</span></div>
+      <div className="trow"><span className="trow-label">Rev Growth</span><span className="trow-value" style={{color:parseFloat(f?.QuarterlyRevenueGrowthYOY||0)>0?"var(--green)":"var(--red)"}}>{f?.QuarterlyRevenueGrowthYOY?(parseFloat(f.QuarterlyRevenueGrowthYOY)*100).toFixed(1)+"%":"—"}</span></div>
+      <div className="trow"><span className="trow-label">Profit Margin</span><span className="trow-value">{f?.ProfitMargin?(parseFloat(f.ProfitMargin)*100).toFixed(1)+"%":"—"}</span></div>
+      <div className="trow"><span className="trow-label">Market Cap</span><span className="trow-value">{f?.MarketCapitalization?"$"+(parseInt(f.MarketCapitalization)/1e9).toFixed(1)+"B":"—"}</span></div>
+      <div className="trow"><span className="trow-label">Debt/Equity</span><span className="trow-value">{parseFloat(f?.DebtToEquityRatio||0).toFixed(2)||"—"}</span></div>
+    </div>
+
+    <div className="card">
+      <div className="card-title">🧠 AI Reasoning</div>
+      <div style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.7,marginBottom:12}}>
+        Conviction score: <strong style={{color:sc}}>{scoring.score}/100</strong> · Action: <strong style={{color:ACTION_COLORS[scoring.action]}}>{scoring.action}</strong> · Suggested size: <strong style={{color:"var(--accent)"}}>{scoring.positionPct}%</strong>
+      </div>
+      {scoring.rationale.map((r,i)=><div key={i} className="reasoning-item">
+        <div className="rdot" style={{background:r.includes("Strong")||r.includes("bull")||r.includes("Attractive")?"var(--green)":r.includes("risk")||r.includes("Declining")||r.includes("bear")?"var(--red)":"var(--accent)"}}/>
+        {r}
+      </div>)}
+    </div>
+
+    {sent?.articles?.length>0&&<div className="card">
+      <div className="card-title">📰 News & Sentiment</div>
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--surface2)",borderRadius:8,marginBottom:12}}>
+        <div style={{fontFamily:"var(--font-display)",fontSize:16,fontWeight:700,color:(sent.score||0)>0?"var(--green)":(sent.score||0)<-0.2?"var(--red)":"var(--accent)"}}>{sent.label}</div>
+        <div style={{flex:1,height:6,background:"var(--surface3)",borderRadius:3,overflow:"hidden"}}>
+          <div style={{height:"100%",width:`${Math.min(100,Math.abs(sent.score||0)*100)}%`,background:(sent.score||0)>0?"var(--green)":"var(--red)",borderRadius:3}}/>
+        </div>
+        <div style={{fontSize:10,color:"var(--text-dim)"}}>{(sent.score||0).toFixed(3)}</div>
+      </div>
+      {sent.articles.map((a,i)=>{
+        const ts=a.ticker_sentiment?.find(x=>x.ticker===ticker);
+        const s=parseFloat(ts?.ticker_sentiment_score||"0");
+        return <div key={i} className="news-item">
+          <div className="news-title">{a.title}</div>
+          <div className="news-meta">
+            <span>{a.source}</span><span>·</span><span>{a.time_published?.slice(0,8)}</span>
+            {ts&&<span className="badge" style={{background:s>0?"rgba(0,210,106,.15)":s<0?"rgba(255,71,87,.15)":"rgba(59,158,255,.1)",color:s>0?"var(--green)":s<0?"var(--red)":"var(--accent)"}}>{ts.ticker_sentiment_label||"Neutral"}</span>}
+          </div>
+        </div>;
+      })}
+    </div>}
+  </>;
+}
+
+function PositionsView({portfolio,stockData,onSelect,onTrade}) {
+  const positions=Object.entries(portfolio.positions);
+  if(!positions.length) return <div className="card"><div className="empty-state">No open positions yet.<br/>Execute trades from the dashboard.</div></div>;
+  return <div className="card">
+    <div className="card-title">⊞ Open Positions</div>
+    {positions.map(([ticker,pos])=>{
+      const price=stockData[ticker]?.quote?.price||pos.avgCost;
+      const mv=price*pos.quantity, cost=pos.avgCost*pos.quantity, pnl=mv-cost, pnlPct=(pnl/cost)*100;
+      return <div key={ticker} className="pos-row" onClick={()=>onSelect(ticker)}>
+        <div className="pos-top">
+          <div><div className="pos-ticker">{ticker}</div><div className="pos-shares">{pos.quantity} shares</div></div>
+          <div>
+            <div className={`pos-pnl ${pnl>=0?"up":"down"}`}>{pnl>=0?"+":""}{pnl.toFixed(0)}</div>
+            <div className={`pos-pnlpct ${pnlPct>=0?"up":"down"}`}>{pnlPct>=0?"+":""}{pnlPct.toFixed(2)}%</div>
+          </div>
+        </div>
+        <div className="pos-bottom">
+          <div className="pos-detail">Avg ${pos.avgCost.toFixed(2)} · Now ${price.toFixed(2)} · Val ${mv.toLocaleString("en",{maximumFractionDigits:0})}</div>
+          <button className="btn-trade" style={{fontSize:10,padding:"5px 12px"}} onClick={e=>{e.stopPropagation();onTrade({ticker})}}>Trade</button>
+        </div>
+      </div>;
+    })}
+  </div>;
+}
+
+function TradesView({trades}) {
+  if(!trades.length) return <div className="card"><div className="empty-state">No trades yet.<br/>Start trading from the Markets tab.</div></div>;
+  return <div className="card">
+    <div className="card-title">⇄ Trade History</div>
+    {trades.map(t=><div key={t.id} className="trade-row">
+      <div>
+        <span style={{fontFamily:"var(--font-display)",fontWeight:800,fontSize:14,color:"#fff",marginRight:8}}>{t.ticker}</span>
+        <span style={{color:t.side==="BUY"?"var(--green)":"var(--red)",fontWeight:700,fontSize:11,marginRight:8}}>{t.side}</span>
+        <span style={{color:"var(--text-muted)",fontSize:11}}>{t.quantity} @ ${t.fillPrice}</span>
+      </div>
+      <div style={{textAlign:"right"}}>
+        <div style={{fontSize:13,fontWeight:700,color:"var(--text)"}}>${t.total.toFixed(0)}</div>
+        <div style={{fontSize:9,color:"var(--text-dim)"}}>{new Date(t.timestamp).toLocaleString()}</div>
+      </div>
+    </div>)}
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
