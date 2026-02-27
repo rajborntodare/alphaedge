@@ -1,229 +1,391 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-  <meta name="mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <title>AlphaEdge — AI Stock Trader</title>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap');
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    :root{
-      --bg:#080c14;--surface:#0d1421;--surface2:#111b2e;--surface3:#162034;
-      --border:rgba(255,255,255,0.06);--border-active:rgba(59,158,255,0.35);
-      --text:#e8edf5;--text-muted:#5a6a85;--text-dim:#3a4a65;
-      --accent:#3b9eff;--accent-glow:rgba(59,158,255,0.3);
-      --green:#00d26a;--red:#ff4757;--yellow:#f5a623;
-      --font-body:'DM Mono',monospace;--font-display:'Syne',sans-serif;
-    }
-    html,body,#root{height:100%;overflow:hidden}
-    body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:13px;line-height:1.6}
-    .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
-    .header{background:rgba(8,12,20,0.97);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;height:52px;flex-shrink:0;position:relative;z-index:100}
-    .logo{font-family:var(--font-display);font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:7px}
-    .logo-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent-glow);animation:pulse 2s ease-in-out infinite}
-    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.85)}}
-    .header-spacer{flex:1}
-    .hm{display:flex;flex-direction:column;align-items:flex-end}
-    .hml{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px}
-    .hmv{font-size:13px;font-weight:600;color:var(--text)}
-    .toggle-btn{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-family:var(--font-body);font-size:10px;cursor:pointer;transition:all .2s;-webkit-tap-highlight-color:transparent;color:var(--text-muted)}
-    .sw{width:30px;height:17px;background:var(--surface3);border-radius:9px;position:relative;transition:background .3s;border:1px solid var(--border)}
-    .sw.on{background:var(--green);border-color:transparent}
-    .sk{position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:white;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
-    .sw.on .sk{transform:translateX(13px)}
-    .main-scroll{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
-    .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
-    .card-title{font-family:var(--font-display);font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .mc{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px}
-    .ml{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:6px}
-    .mv{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text)}
-    .ms{font-size:10px;color:var(--text-muted);margin-top:3px}
-    .up{color:var(--green)}.down{color:var(--red)}.neutral{color:var(--accent)}
-    .stock-row{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:6px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s}
-    .stock-row:active{background:var(--surface3);border-color:var(--border-active)}
-    .sr-left{display:flex;flex-direction:column;gap:3px}
-    .sr-ticker{font-family:var(--font-display);font-size:15px;font-weight:800;color:#fff}
-    .sr-name{font-size:10px;color:var(--text-dim)}
-    .sr-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
-    .sr-price{font-family:var(--font-display);font-size:14px;font-weight:700;color:var(--text)}
-    .sr-change{font-size:11px;font-weight:600}
-    .badge{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.4px}
-    .score-pill{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700}
-    .score-bar-wrap{display:flex;align-items:center;gap:6px}
-    .score-bar-track{flex:1;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
-    .score-bar-fill{height:100%;border-radius:2px}
-    .bottom-nav{display:flex;background:rgba(8,12,20,.97);border-top:1px solid var(--border);flex-shrink:0}
-    .bnav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;gap:3px;transition:all .15s;border-top:2px solid transparent}
-    .bnav-item.active{border-top-color:var(--accent);color:var(--accent)}
-    .bnav-icon{font-size:18px}
-    .bnav-label{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim)}
-    .bnav-item.active .bnav-label{color:var(--accent)}
-    .stock-detail-header{padding:0 0 14px;border-bottom:1px solid var(--border);margin-bottom:14px}
-    .sd-ticker{font-family:var(--font-display);font-size:28px;font-weight:800;color:#fff}
-    .sd-name{font-size:11px;color:var(--text-muted);margin-top:2px;margin-bottom:10px}
-    .sd-price-row{display:flex;align-items:baseline;gap:10px}
-    .sd-price{font-family:var(--font-display);font-size:26px;font-weight:700;color:#fff}
-    .sd-change{font-size:13px;font-weight:600}
-    .conviction-wrap{display:flex;flex-direction:column;align-items:center;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px}
-    .conviction-circle{position:relative;width:100px;height:100px;margin-bottom:10px}
-    .conviction-circle svg{transform:rotate(-90deg)}
-    .conviction-number{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--font-display);font-size:24px;font-weight:800;color:#fff}
-    .trow{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--border)}
-    .trow:last-child{border-bottom:none}
-    .trow-label{font-size:10px;color:var(--text-dim)}
-    .trow-value{font-size:12px;font-weight:500;color:var(--text);text-align:right}
-    .reasoning-item{display:flex;align-items:flex-start;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--text-muted)}
-    .reasoning-item:last-child{border-bottom:none}
-    .rdot{width:5px;height:5px;border-radius:50%;margin-top:5px;flex-shrink:0}
-    .news-item{padding:10px 0;border-bottom:1px solid var(--border)}
-    .news-item:last-child{border-bottom:none}
-    .news-title{font-size:11px;color:var(--text);line-height:1.4;margin-bottom:4px}
-    .news-meta{font-size:9px;color:var(--text-dim);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center}
-    .modal{background:var(--surface);border:1px solid var(--border-active);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;max-width:480px;box-shadow:0 -20px 60px rgba(0,0,0,.5)}
-    .modal-title{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:18px;color:#fff}
-    .form-label{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:5px;display:block}
-    .form-input{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:var(--font-body);font-size:16px;outline:none;-webkit-appearance:none}
-    .form-input:focus{border-color:var(--border-active)}
-    .btn-group{display:flex;gap:8px;margin-top:18px}
-    .btn{flex:1;padding:13px 16px;border-radius:9px;border:1px solid var(--border);font-family:var(--font-body);font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;-webkit-tap-highlight-color:transparent;transition:all .15s}
-    .btn:active{transform:scale(.97)}
-    .btn-buy{background:rgba(0,210,106,.15);color:var(--green);border-color:rgba(0,210,106,.3)}
-    .btn-sell{background:rgba(255,71,87,.15);color:var(--red);border-color:rgba(255,71,87,.3)}
-    .btn-cancel{background:var(--surface2);color:var(--text-muted)}
-    .btn-trade{background:rgba(59,158,255,.15);color:var(--accent);border:1px solid rgba(59,158,255,.3);border-radius:7px;padding:8px 16px;font-family:var(--font-body);font-size:11px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;text-transform:uppercase;letter-spacing:.5px}
-    .trade-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
-    .trade-row:last-child{border-bottom:none}
-    .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px;color:var(--text-muted);font-size:12px}
-    .spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
-    @keyframes spin{to{transform:rotate(360deg)}}
-    .toast-wrap{position:fixed;top:60px;right:12px;z-index:300;display:flex;flex-direction:column;gap:6px;pointer-events:none}
-    .toast{background:var(--surface2);border:1px solid var(--border-active);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--text);max-width:260px;animation:slidein .3s ease;box-shadow:0 6px 24px rgba(0,0,0,.4)}
-    @keyframes slidein{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
-    .toast-t{font-weight:700;margin-bottom:2px}
-    .toast-m{color:var(--text-muted);font-size:10px}
-    ::-webkit-scrollbar{width:3px}
-    ::-webkit-scrollbar-track{background:transparent}
-    ::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
-    .empty-state{text-align:center;padding:40px 20px;color:var(--text-dim);font-size:12px}
-    .pos-row{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
-    .pos-row:active{border-color:var(--border-active)}
-    .pos-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
-    .pos-ticker{font-family:var(--font-display);font-size:16px;font-weight:800;color:#fff}
-    .pos-shares{font-size:10px;color:var(--text-dim);margin-top:2px}
-    .pos-pnl{font-family:var(--font-display);font-size:16px;font-weight:700;text-align:right}
-    .pos-pnlpct{font-size:10px;text-align:right;margin-top:2px}
-    .pos-bottom{display:flex;justify-content:space-between;align-items:center}
-    .pos-detail{font-size:10px;color:var(--text-dim)}
-  </style>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>AlphaEdge</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080c14;--surface:#0d1421;--surface2:#111b2e;--surface3:#162034;
+  --border:rgba(255,255,255,0.06);--border-a:rgba(59,158,255,0.35);
+  --text:#e8edf5;--muted:#5a6a85;--dim:#3a4a65;
+  --accent:#3b9eff;--green:#00d26a;--red:#ff4757;--yellow:#f5a623;--purple:#a855f7;
+  --font:'DM Mono',monospace;--display:'Syne',sans-serif;
+}
+html,body,#root{height:100%;overflow:hidden}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:13px;line-height:1.6}
+.app{display:flex;flex-direction:column;height:100vh}
+/* HEADER */
+.hdr{background:rgba(8,12,20,.97);border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 14px;gap:10px;height:52px;flex-shrink:0;z-index:100}
+.logo{font-family:var(--display);font-size:16px;font-weight:800;color:#fff;display:flex;align-items:center;gap:7px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px rgba(59,158,255,.5);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.85)}}
+.sp{flex:1}
+.hm{display:flex;flex-direction:column;align-items:flex-end}
+.hml{font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.hmv{font-size:13px;font-weight:600}
+.toggle{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:5px 10px;font-family:var(--font);font-size:10px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sw{width:30px;height:17px;background:var(--surface3);border-radius:9px;position:relative;transition:background .3s;border:1px solid var(--border)}
+.sw.on{background:var(--green);border-color:transparent}
+.sk{position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#fff;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.sw.on .sk{transform:translateX(13px)}
+/* SCROLL */
+.scroll{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch}
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px}
+.ctitle{font-family:var(--display);font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+/* GRID */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mc{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px}
+.ml{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);margin-bottom:5px}
+.mv{font-family:var(--display);font-size:18px;font-weight:700}
+.ms{font-size:10px;color:var(--muted);margin-top:2px}
+.up{color:var(--green)}.dn{color:var(--red)}.ac{color:var(--accent)}.pu{color:var(--purple)}
+/* STOCK ROW */
+.sr{display:flex;align-items:center;justify-content:space-between;padding:10px;border-radius:8px;margin-bottom:6px;background:var(--surface2);border:1px solid var(--border);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .15s}
+.sr:active{background:var(--surface3);border-color:var(--border-a)}
+.sr-l{display:flex;flex-direction:column;gap:3px}
+.sr-tk{font-family:var(--display);font-size:15px;font-weight:800;color:#fff}
+.sr-r{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.sr-pr{font-family:var(--display);font-size:14px;font-weight:700}
+.badge{font-size:9px;padding:2px 7px;border-radius:3px;font-weight:700;letter-spacing:.3px}
+.spill{font-size:10px;padding:2px 7px;border-radius:4px;font-weight:700}
+/* SCORE BAR */
+.sbw{display:flex;align-items:center;gap:6px}
+.sbt{flex:1;height:3px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.sbf{height:100%;border-radius:2px;transition:width .5s}
+/* BOTTOM NAV */
+.bnav{display:flex;background:rgba(8,12,20,.97);border-top:1px solid var(--border);flex-shrink:0}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 4px;cursor:pointer;-webkit-tap-highlight-color:transparent;gap:2px;border-top:2px solid transparent;transition:all .15s}
+.bni.act{border-top-color:var(--accent);color:var(--accent)}
+.bni-ico{font-size:17px}
+.bni-lbl{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)}
+.bni.act .bni-lbl{color:var(--accent)}
+/* DETAIL */
+.dtk{font-family:var(--display);font-size:26px;font-weight:800;color:#fff}
+.dnm{font-size:11px;color:var(--muted);margin-top:2px;margin-bottom:10px}
+.dpr{font-family:var(--display);font-size:24px;font-weight:700}
+.dch{font-size:13px;font-weight:600}
+/* CONVICTION */
+.cvw{display:flex;flex-direction:column;align-items:center;padding:16px;background:var(--surface2);border:1px solid var(--border);border-radius:10px}
+.cvc{position:relative;width:100px;height:100px;margin-bottom:10px}
+.cvc svg{transform:rotate(-90deg)}
+.cvn{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:var(--display);font-size:24px;font-weight:800}
+/* ROWS */
+.tr{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid var(--border)}
+.tr:last-child{border-bottom:none}
+.trl{font-size:10px;color:var(--dim)}
+.trv{font-size:12px;font-weight:500;text-align:right}
+/* REASONING */
+.ri{display:flex;align-items:flex-start;gap:7px;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted)}
+.ri:last-child{border-bottom:none}
+.rd{width:5px;height:5px;border-radius:50%;margin-top:5px;flex-shrink:0}
+/* NEWS */
+.ni{padding:10px 0;border-bottom:1px solid var(--border)}
+.ni:last-child{border-bottom:none}
+.nt{font-size:11px;color:var(--text);line-height:1.4;margin-bottom:4px}
+.nm{font-size:9px;color:var(--dim);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+/* MODAL */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(4px);z-index:200;display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--surface);border:1px solid var(--border-a);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;max-width:480px}
+.mt{font-family:var(--display);font-size:18px;font-weight:700;margin-bottom:18px;color:#fff}
+.fl{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--dim);margin-bottom:5px;display:block}
+.fi{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-family:var(--font);font-size:16px;outline:none;-webkit-appearance:none}
+.fi:focus{border-color:var(--border-a)}
+.bg{display:flex;gap:8px;margin-top:18px}
+.btn{flex:1;padding:13px;border-radius:9px;border:1px solid var(--border);font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;text-transform:uppercase;letter-spacing:.5px;-webkit-tap-highlight-color:transparent}
+.btn:active{transform:scale(.97)}
+.bbuy{background:rgba(0,210,106,.15);color:var(--green);border-color:rgba(0,210,106,.3)}
+.bsell{background:rgba(255,71,87,.15);color:var(--red);border-color:rgba(255,71,87,.3)}
+.bcan{background:var(--surface2);color:var(--muted)}
+.btrade{background:rgba(59,158,255,.15);color:var(--accent);border:1px solid rgba(59,158,255,.3);border-radius:7px;padding:8px 16px;font-family:var(--font);font-size:11px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent;text-transform:uppercase;letter-spacing:.5px}
+/* OPTIONS */
+.opt-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px}
+.opt-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.opt-tk{font-family:var(--display);font-size:14px;font-weight:800;color:#fff}
+.opt-type{font-size:10px;padding:2px 8px;border-radius:4px;font-weight:700}
+.call-badge{background:rgba(0,210,106,.15);color:var(--green)}
+.put-badge{background:rgba(255,71,87,.15);color:var(--red)}
+/* POS */
+.pr{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pr:active{border-color:var(--border-a)}
+.pt{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.ptk{font-family:var(--display);font-size:16px;font-weight:800;color:#fff}
+.psh{font-size:10px;color:var(--dim);margin-top:2px}
+.ppnl{font-family:var(--display);font-size:16px;font-weight:700;text-align:right}
+.ppp{font-size:10px;text-align:right;margin-top:2px}
+.pb{display:flex;justify-content:space-between;align-items:center}
+.pd{font-size:10px;color:var(--dim)}
+/* TRADE ROW */
+.trow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border)}
+.trow:last-child{border-bottom:none}
+/* LOADING */
+.load{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px;color:var(--muted);font-size:12px}
+.spin{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* TOAST */
+.twrap{position:fixed;top:60px;right:12px;z-index:300;display:flex;flex-direction:column;gap:6px;pointer-events:none}
+.toast{background:var(--surface2);border:1px solid var(--border-a);border-radius:8px;padding:10px 14px;font-size:11px;color:var(--text);max-width:260px;animation:si .3s ease;box-shadow:0 6px 24px rgba(0,0,0,.4)}
+@keyframes si{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+.tt{font-weight:700;margin-bottom:2px}
+.tm{color:var(--muted);font-size:10px}
+/* STATUS BAR */
+.status-bar{background:rgba(0,210,106,.08);border-bottom:1px solid rgba(0,210,106,.15);padding:4px 14px;display:flex;align-items:center;gap:8px;font-size:10px;color:var(--green);flex-shrink:0}
+.status-bar.off{background:rgba(255,71,87,.06);border-color:rgba(255,71,87,.15);color:var(--red)}
+/* EMPTY */
+.empty{text-align:center;padding:40px 20px;color:var(--dim);font-size:12px}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+.tab-row{display:flex;gap:8px;margin-bottom:14px}
+.tab{padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;border:1px solid var(--border);color:var(--muted);-webkit-tap-highlight-color:transparent;font-family:var(--font)}
+.tab.act{background:rgba(59,158,255,.15);color:var(--accent);border-color:rgba(59,158,255,.3)}
+</style>
 </head>
-<body>
-<div id="root"></div>
-
+<body><div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useCallback, useRef } = React;
+const {useState,useEffect,useCallback,useRef} = React;
 
-const ALPHA_VANTAGE_KEY = "TBG2JQT5P4D47XK8";
+// ── CONFIG ────────────────────────────────────────────────────
+const AV_KEY = "TBG2JQT5P4D47XK8";
 const INITIAL_CASH = 100000;
 const WATCHLIST = ["AAPL","MSFT","NVDA","TSLA","GOOGL","AMZN","META","JPM","V","UNH"];
-const ACTION_COLORS = { BUY:"#00d26a", HOLD:"#3b9eff", TRIM:"#f5a623", EXIT:"#ff4757" };
-const ACTION_BG = { BUY:"rgba(0,210,106,0.15)", HOLD:"rgba(59,158,255,0.15)", TRIM:"rgba(245,166,35,0.15)", EXIT:"rgba(255,71,87,0.15)" };
+const AC = {BUY:"#00d26a",HOLD:"#3b9eff",TRIM:"#f5a623",EXIT:"#ff4757"};
+const AB = {BUY:"rgba(0,210,106,.15)",HOLD:"rgba(59,158,255,.15)",TRIM:"rgba(245,166,.35,.15)",EXIT:"rgba(255,71,87,.15)"};
+
+// ── PERSISTENT STORAGE ────────────────────────────────────────
+const Storage = {
+  save(key, val) {
+    try {
+      const s = JSON.stringify(val);
+      if(window.AndroidStorage) window.AndroidStorage.save(key, s);
+      else localStorage.setItem(key, s);
+    } catch(e) {}
+  },
+  load(key) {
+    try {
+      let s;
+      if(window.AndroidStorage) s = window.AndroidStorage.load(key);
+      else s = localStorage.getItem(key);
+      return s ? JSON.parse(s) : null;
+    } catch(e) { return null; }
+  }
+};
+
+// ── INITIAL PORTFOLIO ─────────────────────────────────────────
+function initPortfolio() {
+  const saved = Storage.load("portfolio");
+  if(saved && saved.cash !== undefined) return saved;
+  return {cash:INITIAL_CASH, positions:{}, trades:[], options:{}};
+}
 
 // ── SCORING ENGINE ────────────────────────────────────────────
 function scoreStock(fund, tech, sent) {
   let score = 50; const reasons = [];
-  if (fund) {
-    const pe = parseFloat(fund.PERatio||0), eg = parseFloat(fund.QuarterlyEarningsGrowthYOY||0)*100;
-    const rg = parseFloat(fund.QuarterlyRevenueGrowthYOY||0)*100, pm = parseFloat(fund.ProfitMargin||0)*100;
-    const de = parseFloat(fund.DebtToEquityRatio||0);
-    if(pe>0&&pe<20){score+=8;reasons.push("Attractive P/E ratio")}else if(pe>40){score-=5;reasons.push("High P/E valuation risk")}
+  if(fund) {
+    const pe=parseFloat(fund.PERatio||0), eg=parseFloat(fund.QuarterlyEarningsGrowthYOY||0)*100;
+    const rg=parseFloat(fund.QuarterlyRevenueGrowthYOY||0)*100, pm=parseFloat(fund.ProfitMargin||0)*100;
+    const de=parseFloat(fund.DebtToEquityRatio||0);
+    if(pe>0&&pe<20){score+=8;reasons.push("Attractive P/E ratio")}else if(pe>40){score-=5;reasons.push("High P/E valuation")}
     if(eg>20){score+=10;reasons.push(`Strong EPS growth +${eg.toFixed(0)}%`)}else if(eg<0){score-=8;reasons.push("Declining earnings")}
     if(rg>15){score+=8;reasons.push(`Revenue growth +${rg.toFixed(0)}%`)}else if(rg<0){score-=5;reasons.push("Revenue contraction")}
     if(pm>20){score+=7;reasons.push("High profit margins")}else if(pm<5){score-=3;reasons.push("Thin margins")}
-    if(de<0.5){score+=7;reasons.push("Strong balance sheet")}else if(de>2){score-=7;reasons.push("High leverage risk")}
+    if(de<0.5){score+=7;reasons.push("Strong balance sheet")}else if(de>2){score-=7;reasons.push("High leverage")}
   }
-  if (tech) {
-    const {rsi,macdSignal,sma20,sma50,currentPrice,volumeRatio} = tech;
-    if(rsi>0&&rsi<40){score+=10;reasons.push("Oversold RSI — potential reversal")}
+  if(tech) {
+    const {rsi,macdSignal,sma20,sma50,currentPrice,volumeRatio}=tech;
+    if(rsi>0&&rsi<40){score+=10;reasons.push("Oversold RSI — reversal potential")}
     else if(rsi>70){score-=8;reasons.push("Overbought RSI")}
-    else if(rsi>=40&&rsi<=60){score+=4;reasons.push("Neutral RSI momentum")}
+    else if(rsi>=40&&rsi<=60){score+=4;reasons.push("Neutral RSI")}
     if(macdSignal==="BULLISH"){score+=10;reasons.push("MACD bullish crossover")}
-    else if(macdSignal==="BEARISH"){score-=10;reasons.push("MACD bearish crossover")}
-    if(currentPrice>sma20&&sma20>sma50){score+=10;reasons.push("Price above rising MAs — uptrend")}
+    else if(macdSignal==="BEARISH"){score-=10;reasons.push("MACD bearish signal")}
+    if(currentPrice>sma20&&sma20>sma50){score+=10;reasons.push("Uptrend — price above rising MAs")}
     else if(currentPrice<sma20&&sma20<sma50){score-=8;reasons.push("Downtrend — below all MAs")}
-    if(volumeRatio>1.5){score+=5;reasons.push("Above-average volume confirmation")}
+    if(volumeRatio>1.5){score+=5;reasons.push("High volume confirmation")}
   }
-  if (sent) {
-    const s = sent.score||0;
-    if(s>0.6){score+=15;reasons.push(`Strongly bullish sentiment (${sent.label})`)}
-    else if(s>0.3){score+=8;reasons.push("Mildly positive sentiment")}
-    else if(s<-0.3){score-=10;reasons.push("Negative market sentiment")}
-    else if(s<-0.6){score-=15;reasons.push(`Strongly bearish sentiment (${sent.label})`)}
+  if(sent) {
+    const s=sent.score||0;
+    if(s>0.6){score+=15;reasons.push(`Strongly bullish news sentiment`)}
+    else if(s>0.3){score+=8;reasons.push("Positive news sentiment")}
+    else if(s<-0.3){score-=10;reasons.push("Negative news sentiment")}
+    else if(s<-0.6){score-=15;reasons.push("Strongly negative sentiment")}
   }
-  score = Math.max(0,Math.min(100,score));
+  score=Math.max(0,Math.min(100,score));
   let action="HOLD", posPct=5;
   if(score>=75){action="BUY";posPct=Math.min(15,(score-70)/2+5)}
   else if(score>=55){action="HOLD";posPct=5}
   else if(score>=35){action="TRIM";posPct=3}
   else{action="EXIT";posPct=0}
-  return {score:Math.round(score),action,positionPct:Math.round(posPct),rationale:reasons.length?reasons:["Insufficient data for full analysis"]};
+  return {score:Math.round(score),action,positionPct:Math.round(posPct),rationale:reasons.length?reasons:["Insufficient data"]};
 }
 
 // ── PAPER TRADING ENGINE ──────────────────────────────────────
-function createOrder({ticker,type,side,quantity,price,portfolioState}) {
-  const id = `ORD-${Date.now()}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
-  const fillPrice = type==="MARKET" ? price*(side==="BUY"?1.001:0.999) : price;
-  const total = fillPrice*quantity;
-  if(side==="BUY"&&total>portfolioState.cash) return {error:"Insufficient cash"};
-  return {trade:{id,ticker,side,quantity,fillPrice:parseFloat(fillPrice.toFixed(2)),total:parseFloat(total.toFixed(2)),timestamp:new Date().toISOString(),status:"FILLED",type}};
+function createOrder({ticker,side,quantity,price}) {
+  const fill = price*(side==="BUY"?1.001:0.999);
+  const total = fill*quantity;
+  return {
+    id:`ORD-${Date.now()}`, ticker, side, quantity,
+    fillPrice:parseFloat(fill.toFixed(2)), total:parseFloat(total.toFixed(2)),
+    timestamp:new Date().toISOString(), status:"FILLED", type:"MARKET", source:"MANUAL"
+  };
 }
 
 function applyTrade(prev, trade) {
-  const s = {...prev, trades:[trade,...prev.trades], positions:{...prev.positions}};
-  if(trade.side==="BUY") {
-    s.cash -= trade.total;
-    const ex = s.positions[trade.ticker];
-    if(ex){const tq=ex.quantity+trade.quantity;s.positions[trade.ticker]={...ex,quantity:tq,avgCost:(ex.avgCost*ex.quantity+trade.total)/tq}}
-    else s.positions[trade.ticker]={ticker:trade.ticker,quantity:trade.quantity,avgCost:trade.fillPrice,entryDate:trade.timestamp};
+  const s={...prev, trades:[trade,...(prev.trades||[])], positions:{...prev.positions}};
+  if(trade.side==="BUY"||trade.side.includes("BUY")) {
+    s.cash-=trade.total;
+    if(trade.type!=="OPTION") {
+      const ex=s.positions[trade.ticker];
+      if(ex){const tq=ex.quantity+trade.quantity;s.positions[trade.ticker]={...ex,quantity:tq,avgCost:(ex.avgCost*ex.quantity+trade.total)/tq}}
+      else s.positions[trade.ticker]={ticker:trade.ticker,quantity:trade.quantity,avgCost:trade.fillPrice,entryDate:trade.timestamp};
+    }
   } else {
-    s.cash += trade.total;
-    const ex = s.positions[trade.ticker];
-    if(ex){const rem=ex.quantity-trade.quantity;if(rem<=0)delete s.positions[trade.ticker];else s.positions[trade.ticker]={...ex,quantity:rem}}
+    s.cash+=trade.total;
+    if(trade.type!=="OPTION") {
+      const ex=s.positions[trade.ticker];
+      if(ex){const rem=ex.quantity-trade.quantity;if(rem<=0)delete s.positions[trade.ticker];else s.positions[trade.ticker]={...ex,quantity:rem}}
+    }
   }
-  s.cash = parseFloat(s.cash.toFixed(2));
+  s.cash=parseFloat(s.cash.toFixed(2));
   return s;
 }
 
-// ── DATA INGESTION ────────────────────────────────────────────
-const cache = {};
-async function fetchAV(fn, symbol, extra="") {
-  const key=`${fn}_${symbol}`;
+function autoExecute(portfolio, ticker, scoring, quote, autoTrade) {
+  if(!autoTrade||!quote) return {portfolio, actions:[]};
+  const {action, positionPct, score} = scoring;
+  const {price} = quote;
+  let p = {...portfolio, positions:{...portfolio.positions}, trades:[...(portfolio.trades||[])], options:{...(portfolio.options||{})}};
+  const actions = [];
+
+  // --- AUTO BUY ---
+  if(action==="BUY" && !p.positions[ticker] && p.cash>1000) {
+    const qty = Math.max(1, Math.floor((p.cash*positionPct/100)/price));
+    const trade = {...createOrder({ticker,side:"BUY",quantity:qty,price}), source:"AUTO"};
+    if(trade.total <= p.cash) {
+      p = applyTrade(p, trade);
+      actions.push(`🤖 Auto Bought ${qty} ${ticker} @ $${trade.fillPrice}`);
+    }
+  }
+
+  // --- AUTO SELL (EXIT or stop-loss) ---
+  const pos = p.positions[ticker];
+  if(pos && (action==="EXIT"||action==="TRIM")) {
+    const pnlPct = ((price-pos.avgCost)/pos.avgCost)*100;
+    const hardStop = pnlPct < -8;
+    const sellQty = (action==="EXIT"||hardStop) ? pos.quantity : Math.max(1,Math.floor(pos.quantity/2));
+    const trade = {...createOrder({ticker,side:"SELL",quantity:sellQty,price}), source:"AUTO"};
+    p = applyTrade(p, trade);
+    const reason = hardStop ? "stop-loss (-8%)" : action==="EXIT" ? "EXIT signal" : "TRIM signal";
+    actions.push(`🤖 Auto Sold ${sellQty} ${ticker} @ $${trade.fillPrice} (${reason})`);
+  }
+
+  // --- OPTIONS: BUY CALL on strong conviction ---
+  const optKey_call = `${ticker}_CALL`;
+  const optKey_put = `${ticker}_PUT`;
+  if(score>=85 && !p.options[optKey_call] && p.cash>500) {
+    const premium = price*0.02;
+    const contracts = Math.max(1,Math.floor((p.cash*0.03)/(premium*100)));
+    const totalCost = premium*contracts*100;
+    if(totalCost <= p.cash*0.05) {
+      const optTrade = {
+        id:`OPT-${Date.now()}`, ticker, side:"BUY CALL", quantity:contracts,
+        fillPrice:parseFloat(premium.toFixed(2)), total:parseFloat(totalCost.toFixed(2)),
+        timestamp:new Date().toISOString(), status:"FILLED", type:"OPTION", source:"AUTO"
+      };
+      p.cash -= totalCost;
+      p.cash = parseFloat(p.cash.toFixed(2));
+      p.trades = [optTrade, ...p.trades];
+      p.options[optKey_call] = {
+        type:"CALL", ticker, strike:parseFloat((price*1.05).toFixed(2)),
+        premium, contracts, totalCost, entryPrice:price,
+        entryDate:new Date().toISOString(), expiry:expiryDate(30), status:"OPEN"
+      };
+      actions.push(`📈 Auto Bought ${contracts} CALL contracts on ${ticker} (score ${score})`);
+    }
+  }
+
+  // --- OPTIONS: BUY PUT on very bearish signal ---
+  if(score<=20 && !p.options[optKey_put] && p.cash>500) {
+    const premium = price*0.02;
+    const contracts = Math.max(1,Math.floor((p.cash*0.02)/(premium*100)));
+    const totalCost = premium*contracts*100;
+    if(totalCost <= p.cash*0.05) {
+      const optTrade = {
+        id:`OPT-${Date.now()}`, ticker, side:"BUY PUT", quantity:contracts,
+        fillPrice:parseFloat(premium.toFixed(2)), total:parseFloat(totalCost.toFixed(2)),
+        timestamp:new Date().toISOString(), status:"FILLED", type:"OPTION", source:"AUTO"
+      };
+      p.cash -= totalCost;
+      p.cash = parseFloat(p.cash.toFixed(2));
+      p.trades = [optTrade, ...p.trades];
+      p.options[optKey_put] = {
+        type:"PUT", ticker, strike:parseFloat((price*0.95).toFixed(2)),
+        premium, contracts, totalCost, entryPrice:price,
+        entryDate:new Date().toISOString(), expiry:expiryDate(30), status:"OPEN"
+      };
+      actions.push(`📉 Auto Bought ${contracts} PUT contracts on ${ticker} (score ${score})`);
+    }
+  }
+
+  // --- SETTLE OPEN OPTIONS ---
+  [optKey_call, optKey_put].forEach(key=>{
+    const opt = p.options[key];
+    if(!opt||opt.status!=="OPEN") return;
+    let intrinsic = 0;
+    if(opt.type==="CALL") intrinsic = Math.max(0, price-opt.strike);
+    else intrinsic = Math.max(0, opt.strike-price);
+    const curVal = (intrinsic + opt.premium*0.3)*opt.contracts*100;
+    const pnlPct = ((curVal-opt.totalCost)/opt.totalCost)*100;
+    if(pnlPct>50||pnlPct<-70) {
+      const optTrade = {
+        id:`OPT-${Date.now()}`, ticker: opt.ticker,
+        side:`SELL ${opt.type}${pnlPct>0?" (Profit)":" (Loss)"}`,
+        quantity:opt.contracts, fillPrice:parseFloat((curVal/(opt.contracts*100)).toFixed(2)),
+        total:parseFloat(curVal.toFixed(2)), timestamp:new Date().toISOString(),
+        status:"FILLED", type:"OPTION", source:"AUTO"
+      };
+      p.cash += curVal;
+      p.cash = parseFloat(p.cash.toFixed(2));
+      p.trades = [optTrade,...p.trades];
+      p.options[key]={...opt,status:"CLOSED",closedValue:curVal,closeDate:new Date().toISOString()};
+      actions.push(`${pnlPct>0?"✅":"❌"} Closed ${opt.type} on ${ticker}: ${pnlPct>0?"+":""}${pnlPct.toFixed(0)}%`);
+    }
+  });
+
+  return {portfolio:p, actions};
+}
+
+function expiryDate(days) {
+  const d = new Date(Date.now()+days*24*3600*1000);
+  return d.toISOString().slice(0,10);
+}
+
+// ── DATA FETCHING ─────────────────────────────────────────────
+const cache={};
+async function fetchAV(fn,sym,extra="") {
+  const key=`${fn}_${sym}`;
   if(cache[key]&&Date.now()-cache[key].ts<300000) return cache[key].data;
-  try {
-    const r = await fetch(`https://www.alphavantage.co/query?function=${fn}&symbol=${symbol}${extra}&apikey=${ALPHA_VANTAGE_KEY}`);
-    const data = await r.json();
+  try{
+    const r=await fetch(`https://www.alphavantage.co/query?function=${fn}&symbol=${sym}${extra}&apikey=${AV_KEY}`);
+    const data=await r.json();
     cache[key]={data,ts:Date.now()};
     return data;
-  } catch { return null; }
+  }catch{return null}
 }
-
-async function fetchQuote(s) {
-  const d = await fetchAV("GLOBAL_QUOTE",s);
+async function fetchQuote(s){
+  const d=await fetchAV("GLOBAL_QUOTE",s);
   if(!d||!d["Global Quote"]) return null;
-  const q = d["Global Quote"];
-  return {price:parseFloat(q["05. price"]),change:parseFloat(q["09. % change"]),volume:parseInt(q["06. volume"]),high:parseFloat(q["03. high"]),low:parseFloat(q["04. low"])};
+  const q=d["Global Quote"];
+  return{price:parseFloat(q["05. price"]),change:parseFloat(q["09. % change"]||"0"),volume:parseInt(q["06. volume"]||"0")};
 }
-
-async function fetchFund(s) { return await fetchAV("OVERVIEW",s); }
-
-async function fetchTech(s, quote) {
-  const [rd,md,s20,s50] = await Promise.all([
+async function fetchFund(s){return await fetchAV("OVERVIEW",s)}
+async function fetchTech(s,quote){
+  const[rd,md,s20d,s50d]=await Promise.all([
     fetchAV("RSI",s,"&interval=daily&time_period=14&series_type=close"),
     fetchAV("MACD",s,"&interval=daily&series_type=close"),
     fetchAV("SMA",s,"&interval=daily&time_period=20&series_type=close"),
@@ -231,318 +393,483 @@ async function fetchTech(s, quote) {
   ]);
   let rsi=50,macdSignal="NEUTRAL",sma20=quote?.price||0,sma50=quote?.price||0;
   try{const rs=rd?.["Technical Analysis: RSI"];if(rs){const k=Object.keys(rs)[0];rsi=parseFloat(rs[k]["RSI"])}}catch{}
-  try{const ms=md?.["Technical Analysis: MACD"];if(ms){const ks=Object.keys(ms);const cur=ms[ks[0]],prev=ms[ks[1]];const ch=parseFloat(cur["MACD_Hist"]),ph=parseFloat(prev?.["MACD_Hist"]||"0");macdSignal=ch>0&&ch>ph?"BULLISH":ch<0&&ch<ph?"BEARISH":"NEUTRAL"}}catch{}
-  try{const ss20=s20?.["Technical Analysis: SMA"];if(ss20)sma20=parseFloat(Object.values(ss20)[0]["SMA"])}catch{}
-  try{const ss50=s50?.["Technical Analysis: SMA"];if(ss50)sma50=parseFloat(Object.values(ss50)[0]["SMA"])}catch{}
-  return {rsi,macdSignal,sma20,sma50,currentPrice:quote?.price||0,volumeRatio:(quote?.volume||0)/15000000};
+  try{const ms=md?.["Technical Analysis: MACD"];if(ms){const ks=Object.keys(ms);const c=ms[ks[0]],pv=ms[ks[1]];const ch=parseFloat(c["MACD_Hist"]),ph=parseFloat(pv?.["MACD_Hist"]||"0");macdSignal=ch>0&&ch>ph?"BULLISH":ch<0&&ch<ph?"BEARISH":"NEUTRAL"}}catch{}
+  try{const ss=s20d?.["Technical Analysis: SMA"];if(ss)sma20=parseFloat(Object.values(ss)[0]["SMA"])}catch{}
+  try{const ss=s50d?.["Technical Analysis: SMA"];if(ss)sma50=parseFloat(Object.values(ss)[0]["SMA"])}catch{}
+  return{rsi,macdSignal,sma20,sma50,currentPrice:quote?.price||0,volumeRatio:(quote?.volume||0)/15000000};
+}
+async function fetchSent(s){
+  const d=await fetchAV("NEWS_SENTIMENT",s,`&tickers=${s}&limit=10`);
+  if(!d||!d.feed) return{score:0,label:"Neutral",articles:[]};
+  const arts=d.feed.slice(0,5);
+  const avg=arts.reduce((sum,a)=>{const t=a.ticker_sentiment?.find(x=>x.ticker===s);return sum+parseFloat(t?.ticker_sentiment_score||"0")},0)/Math.max(arts.length,1);
+  return{score:avg,label:avg>0.35?"Bullish":avg<-0.35?"Bearish":"Neutral",articles:arts};
 }
 
-async function fetchSent(s) {
-  const d = await fetchAV("NEWS_SENTIMENT",s,`&tickers=${s}&limit=10`);
-  if(!d||!d.feed) return {score:0,label:"Neutral",articles:[]};
-  const arts = d.feed.slice(0,5);
-  const avg = arts.reduce((sum,a)=>{const t=a.ticker_sentiment?.find(x=>x.ticker===s);return sum+parseFloat(t?.ticker_sentiment_score||"0")},0)/Math.max(arts.length,1);
-  return {score:avg,label:avg>0.35?"Bullish":avg<-0.35?"Bearish":"Neutral",articles:arts};
+// ── SMALL COMPONENTS ──────────────────────────────────────────
+function ScoreBar({score}){
+  const c=score>=65?"var(--green)":score>=45?"var(--accent)":"var(--red)";
+  return<div className="sbw"><div className="sbt"><div className="sbf" style={{width:`${score}%`,background:c}}/></div><span style={{fontSize:11,color:c,fontWeight:700,minWidth:22,textAlign:"right"}}>{score}</span></div>;
 }
-
-// ── SCORE BAR ─────────────────────────────────────────────────
-function ScoreBar({score}) {
-  const c = score>=65?"var(--green)":score>=45?"var(--accent)":"var(--red)";
-  return <div className="score-bar-wrap">
-    <div className="score-bar-track"><div className="score-bar-fill" style={{width:`${score}%`,background:c}}/></div>
-    <span style={{fontSize:11,color:c,fontWeight:700,minWidth:22,textAlign:"right"}}>{score}</span>
-  </div>;
-}
-
-// ── CONVICTION CIRCLE ─────────────────────────────────────────
-function ConvictionCircle({score}) {
-  const c = score>=70?"var(--green)":score>=45?"var(--accent)":"var(--red)";
-  const circ = 2*Math.PI*48, dash = (score/100)*circ;
-  return <div className="conviction-wrap">
-    <div className="conviction-circle">
+function Conviction({score}){
+  const c=score>=70?"var(--green)":score>=45?"var(--accent)":"var(--red)";
+  const circ=2*Math.PI*48,dash=(score/100)*circ;
+  return<div className="cvw">
+    <div className="cvc">
       <svg width="100" height="100" viewBox="0 0 100 100">
         <circle cx="50" cy="50" r="48" fill="none" stroke="var(--surface3)" strokeWidth="7"/>
         <circle cx="50" cy="50" r="48" fill="none" stroke={c} strokeWidth="7" strokeDasharray={`${dash} ${circ}`} strokeLinecap="round" style={{filter:`drop-shadow(0 0 5px ${c})`}}/>
       </svg>
-      <div className="conviction-number" style={{color:c}}>{score}</div>
+      <div className="cvn" style={{color:c}}>{score}</div>
     </div>
-    <div style={{fontSize:10,color:"var(--text-dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Conviction Score</div>
+    <div style={{fontSize:10,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px"}}>Conviction Score</div>
+    <div style={{fontSize:10,color:"var(--muted)",marginTop:4}}>
+      {score>=75?"Strong Buy Signal":score>=55?"Hold — Monitor":score>=35?"Consider Trimming":"Exit Signal"}
+    </div>
   </div>;
 }
 
 // ── MAIN APP ──────────────────────────────────────────────────
-function App() {
-  const [autoTrade,setAutoTrade]=useState(false);
+function App(){
+  const [autoTrade,setAutoTrade]=useState(()=>{
+    const saved=Storage.load("autoTrade");
+    return saved!==null?saved:true; // DEFAULT ON
+  });
   const [view,setView]=useState("dashboard");
-  const [selectedTicker,setSelectedTicker]=useState(null);
-  const [portfolio,setPortfolio]=useState({cash:INITIAL_CASH,positions:{},trades:[]});
+  const [selTicker,setSelTicker]=useState(null);
+  const [portfolio,setPortfolio]=useState(initPortfolio);
   const [stockData,setStockData]=useState({});
-  const [loadingTicker,setLoadingTicker]=useState(null);
+  const [loading,setLoading]=useState(null);
   const [tradeModal,setTradeModal]=useState(null);
   const [toasts,setToasts]=useState([]);
   const [tradeQty,setTradeQty]=useState("10");
   const [analyzed,setAnalyzed]=useState(new Set());
   const [queue,setQueue]=useState([...WATCHLIST]);
-  const autoRef = useRef(autoTrade);
-  useEffect(()=>{autoRef.current=autoTrade},[autoTrade]);
+  const autoRef=useRef(autoTrade);
+  const portfolioRef=useRef(portfolio);
 
-  const toast = useCallback((title,msg)=>{
-    const id=Date.now();
-    setToasts(t=>[...t,{id,title,msg}]);
-    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4000);
+  useEffect(()=>{autoRef.current=autoTrade;Storage.save("autoTrade",autoTrade)},[autoTrade]);
+  useEffect(()=>{portfolioRef.current=portfolio;Storage.save("portfolio",portfolio)},[portfolio]);
+
+  // Expose reload function for Android to call on resume
+  useEffect(()=>{
+    window.reloadPortfolio=()=>{
+      const saved=Storage.load("portfolio");
+      if(saved&&saved.cash!==undefined) setPortfolio(saved);
+    };
+    return()=>{delete window.reloadPortfolio};
   },[]);
 
+  const toast=useCallback((title,msg)=>{
+    const id=Date.now();
+    setToasts(t=>[...t,{id,title,msg}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),4500);
+  },[]);
+
+  // Analysis queue — rate limit safe
   useEffect(()=>{
     if(queue.length===0) return;
     const ticker=queue[0];
     if(analyzed.has(ticker)){setQueue(q=>q.slice(1));return}
     let cancelled=false;
     const run=async()=>{
-      setLoadingTicker(ticker);
-      const [quote,fund,sent]= await Promise.all([fetchQuote(ticker),fetchFund(ticker),fetchSent(ticker)]);
+      setLoading(ticker);
+      const[quote,fund,sent]=await Promise.all([fetchQuote(ticker),fetchFund(ticker),fetchSent(ticker)]);
       const tech=await fetchTech(ticker,quote);
       if(cancelled) return;
       const scoring=scoreStock(fund,tech,sent);
       setStockData(d=>({...d,[ticker]:{quote,fund,tech,sent,scoring,updatedAt:Date.now()}}));
       setAnalyzed(s=>new Set([...s,ticker]));
       setQueue(q=>q.slice(1));
-      setLoadingTicker(null);
-      if(autoRef.current&&scoring.action==="BUY"&&quote){
-        setPortfolio(prev=>{
-          const qty=Math.max(1,Math.floor((prev.cash*scoring.positionPct/100)/quote.price));
-          if(qty<1||prev.positions[ticker]) return prev;
-          const {trade,error}=createOrder({ticker,type:"MARKET",side:"BUY",quantity:qty,price:quote.price,portfolioState:prev});
-          if(error) return prev;
-          toast("🤖 Auto Trade",`Bought ${qty} ${ticker} @ $${trade.fillPrice}`);
-          return applyTrade(prev,trade);
-        });
+      setLoading(null);
+
+      // Auto trading
+      if(autoRef.current&&quote&&scoring) {
+        const{portfolio:newP, actions}=autoExecute(portfolioRef.current,ticker,scoring,quote,true);
+        if(actions.length>0){
+          setPortfolio(newP);
+          actions.forEach((a,i)=>setTimeout(()=>toast("Auto Trade",a),i*600));
+        }
       }
     };
-    const delay = queue.indexOf(ticker)===0?100:13000;
+    const delay=queue.indexOf(ticker)===0?200:13000;
     const t=setTimeout(run,delay);
     return()=>{cancelled=true;clearTimeout(t)};
   },[queue,analyzed,toast]);
 
-  const posVal=Object.entries(portfolio.positions).reduce((sum,[tk,pos])=>{
+  const posVal=Object.entries(portfolio.positions||{}).reduce((sum,[tk,pos])=>{
     const p=stockData[tk]?.quote?.price||pos.avgCost;
     return sum+p*pos.quantity;
   },0);
-  const totalVal=portfolio.cash+posVal;
+
+  // Options value
+  const optVal=Object.values(portfolio.options||{}).filter(o=>o.status==="OPEN").reduce((sum,opt)=>{
+    const price=stockData[opt.ticker]?.quote?.price||opt.entryPrice;
+    let intrinsic=opt.type==="CALL"?Math.max(0,price-opt.strike):Math.max(0,opt.strike-price);
+    return sum+(intrinsic+opt.premium*0.3)*opt.contracts*100;
+  },0);
+
+  const totalVal=portfolio.cash+posVal+optVal;
   const pnl=totalVal-INITIAL_CASH;
   const pnlPct=(pnl/INITIAL_CASH)*100;
 
   function selectTicker(t){
-    setSelectedTicker(t);setView("stock");
+    setSelTicker(t);setView("stock");
     if(!analyzed.has(t)&&!queue.includes(t)) setQueue(q=>[t,...q]);
   }
 
-  function handleTrade(side){
+  function handleManualTrade(side){
     if(!tradeModal) return;
-    const {ticker}=tradeModal;
+    const{ticker}=tradeModal;
     const price=stockData[ticker]?.quote?.price;
     if(!price){toast("Error","No price data");return}
     const qty=parseInt(tradeQty);
     if(!qty||qty<1){toast("Error","Invalid quantity");return}
-    const {trade,error}=createOrder({ticker,type:"MARKET",side,quantity:qty,price,portfolioState:portfolio});
-    if(error){toast("Failed",error);return}
-    setPortfolio(prev=>applyTrade(prev,trade));
-    toast(`${side==="BUY"?"🟢":"🔴"} Executed`,`${side} ${qty} ${ticker} @ $${trade.fillPrice}`);
+    if(side==="BUY"&&price*qty>portfolio.cash){toast("Error","Insufficient cash");return}
+    const pos=portfolio.positions[ticker];
+    if(side==="SELL"&&(!pos||pos.quantity<qty)){toast("Error","Not enough shares");return}
+    const trade=createOrder({ticker,side,quantity:qty,price});
+    setPortfolio(p=>applyTrade(p,trade));
+    toast(`${side==="BUY"?"🟢":"🔴"} Manual Trade`,`${side} ${qty} ${ticker} @ $${trade.fillPrice}`);
     setTradeModal(null);
   }
 
   const sorted=[...WATCHLIST].sort((a,b)=>(stockData[b]?.scoring?.score||0)-(stockData[a]?.scoring?.score||0));
+  const openOptions=Object.values(portfolio.options||{}).filter(o=>o.status==="OPEN");
 
-  return <div className="app">
+  return<div className="app">
     {/* HEADER */}
-    <header className="header">
-      <div className="logo"><div className="logo-dot"/>AlphaEdge</div>
-      <div className="header-spacer"/>
-      {loadingTicker&&<div style={{fontSize:9,color:"var(--text-dim)",display:"flex",alignItems:"center",gap:5}}><div className="spinner" style={{width:12,height:12,borderWidth:1.5}}/>{loadingTicker}</div>}
-      <div className="hm" style={{marginLeft:10}}>
-        <span className="hml">Value</span>
+    <header className="hdr">
+      <div className="logo"><div className="dot"/>AlphaEdge</div>
+      <div className="sp"/>
+      {loading&&<div style={{fontSize:9,color:"var(--dim)",display:"flex",alignItems:"center",gap:5}}><div className="spin" style={{width:12,height:12,borderWidth:1.5}}/>{loading}</div>}
+      <div className="hm" style={{marginLeft:8}}>
+        <span className="hml">Portfolio</span>
         <span className="hmv">${totalVal.toLocaleString("en",{maximumFractionDigits:0})}</span>
       </div>
-      <button className="toggle-btn" onClick={()=>setAutoTrade(v=>!v)} style={{marginLeft:8}}>
-        <span style={{color:autoTrade?"var(--green)":"var(--text-dim)",fontSize:9}}>{autoTrade?"AUTO ON":"AUTO OFF"}</span>
+      <button className="toggle" onClick={()=>setAutoTrade(v=>!v)} style={{marginLeft:8}}>
+        <span style={{color:autoTrade?"var(--green)":"var(--red)",fontSize:9}}>{autoTrade?"AUTO ON":"AUTO OFF"}</span>
         <div className={`sw ${autoTrade?"on":""}`}><div className="sk"/></div>
       </button>
     </header>
 
+    {/* STATUS BAR */}
+    <div className={`status-bar ${autoTrade?"":"off"}`}>
+      <span>●</span>
+      <span>{autoTrade?"Background trading ACTIVE — buying/selling/options automatically":"Auto-trading PAUSED — manual mode only"}</span>
+    </div>
+
     {/* MAIN */}
-    <div className="main-scroll">
-      {view==="dashboard"&&<DashboardView portfolio={portfolio} stockData={stockData} sorted={sorted} pnl={pnl} pnlPct={pnlPct} posVal={posVal} totalVal={totalVal} onSelect={selectTicker} onTrade={setTradeModal}/>}
-      {view==="stock"&&selectedTicker&&<StockView ticker={selectedTicker} data={stockData[selectedTicker]} position={portfolio.positions[selectedTicker]} onTrade={setTradeModal}/>}
+    <div className="scroll">
+      {view==="dashboard"&&<Dashboard portfolio={portfolio} stockData={stockData} sorted={sorted} pnl={pnl} pnlPct={pnlPct} posVal={posVal} optVal={optVal} totalVal={totalVal} openOptions={openOptions} onSelect={selectTicker} onTrade={setTradeModal}/>}
+      {view==="stock"&&selTicker&&<StockView ticker={selTicker} data={stockData[selTicker]} position={portfolio.positions[selTicker]} options={portfolio.options} onTrade={setTradeModal}/>}
       {view==="positions"&&<PositionsView portfolio={portfolio} stockData={stockData} onSelect={selectTicker} onTrade={setTradeModal}/>}
-      {view==="trades"&&<TradesView trades={portfolio.trades}/>}
+      {view==="history"&&<HistoryView trades={portfolio.trades||[]}/>}
     </div>
 
     {/* BOTTOM NAV */}
-    <nav className="bottom-nav">
-      {[{id:"dashboard",icon:"◈",label:"Markets"},{id:"positions",icon:"⊞",label:"Positions"},{id:"trades",icon:"⇄",label:"History"}].map(n=>
-        <div key={n.id} className={`bnav-item ${view===n.id?"active":""}`} onClick={()=>setView(n.id)}>
-          <div className="bnav-icon">{n.icon}</div>
-          <div className="bnav-label">{n.label}</div>
+    <nav className="bnav">
+      {[{id:"dashboard",ico:"◈",lbl:"Markets"},{id:"positions",ico:"⊞",lbl:"Positions"},{id:"history",ico:"⇄",lbl:"History"}].map(n=>
+        <div key={n.id} className={`bni ${view===n.id?"act":""}`} onClick={()=>setView(n.id)}>
+          <div className="bni-ico">{n.ico}</div>
+          <div className="bni-lbl">{n.lbl}</div>
         </div>
       )}
     </nav>
 
     {/* TRADE MODAL */}
-    {tradeModal&&<div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&setTradeModal(null)}>
+    {tradeModal&&<div className="ov" onClick={e=>e.target===e.currentTarget&&setTradeModal(null)}>
       <div className="modal">
-        <div className="modal-title">Trade {tradeModal.ticker}</div>
+        <div className="mt">Trade {tradeModal.ticker}</div>
         <div style={{marginBottom:14}}>
-          <div className="form-label">Current Price</div>
-          <div style={{fontFamily:"var(--font-display)",fontSize:24,fontWeight:700,color:"#fff"}}>${stockData[tradeModal.ticker]?.quote?.price?.toFixed(2)||"—"}</div>
+          <div className="fl">Current Price</div>
+          <div style={{fontFamily:"var(--display)",fontSize:24,fontWeight:700,color:"#fff"}}>${stockData[tradeModal.ticker]?.quote?.price?.toFixed(2)||"—"}</div>
         </div>
         <div style={{marginBottom:14}}>
-          <label className="form-label">Quantity (shares)</label>
-          <input className="form-input" type="number" min="1" value={tradeQty} onChange={e=>setTradeQty(e.target.value)}/>
+          <label className="fl">Quantity (shares)</label>
+          <input className="fi" type="number" min="1" value={tradeQty} onChange={e=>setTradeQty(e.target.value)}/>
         </div>
-        <div style={{fontSize:10,color:"var(--text-dim)",marginBottom:4}}>
-          Est. total: ${((stockData[tradeModal.ticker]?.quote?.price||0)*parseInt(tradeQty||"0")).toLocaleString("en",{maximumFractionDigits:2})}
-        </div>
-        <div style={{fontSize:10,color:"var(--text-muted)"}}>Cash: ${portfolio.cash.toLocaleString("en",{maximumFractionDigits:0})}</div>
-        <div className="btn-group">
-          <button className="btn btn-buy" onClick={()=>handleTrade("BUY")}>Buy</button>
-          <button className="btn btn-sell" onClick={()=>handleTrade("SELL")}>Sell</button>
-          <button className="btn btn-cancel" onClick={()=>setTradeModal(null)}>Cancel</button>
+        <div style={{fontSize:10,color:"var(--dim)",marginBottom:2}}>Est: ${((stockData[tradeModal.ticker]?.quote?.price||0)*parseInt(tradeQty||"0")).toLocaleString("en",{maximumFractionDigits:2})}</div>
+        <div style={{fontSize:10,color:"var(--muted)"}}>Cash: ${(portfolio.cash||0).toLocaleString("en",{maximumFractionDigits:0})}</div>
+        <div className="bg">
+          <button className="btn bbuy" onClick={()=>handleManualTrade("BUY")}>Buy</button>
+          <button className="btn bsell" onClick={()=>handleManualTrade("SELL")}>Sell</button>
+          <button className="btn bcan" onClick={()=>setTradeModal(null)}>Cancel</button>
         </div>
       </div>
     </div>}
 
     {/* TOASTS */}
-    <div className="toast-wrap">{toasts.map(t=><div key={t.id} className="toast"><div className="toast-t">{t.title}</div><div className="toast-m">{t.msg}</div></div>)}</div>
+    <div className="twrap">{toasts.map(t=><div key={t.id} className="toast"><div className="tt">{t.title}</div><div className="tm">{t.msg}</div></div>)}</div>
   </div>;
 }
 
-// ── VIEWS ─────────────────────────────────────────────────────
-function DashboardView({portfolio,stockData,sorted,pnl,pnlPct,posVal,totalVal,onSelect,onTrade}) {
-  const signals = sorted.filter(t=>stockData[t]?.scoring);
-  return <>
-    <div className="grid2">
-      <div className="mc"><div className="ml">Portfolio</div><div className="mv">${totalVal.toLocaleString("en",{maximumFractionDigits:0})}</div><div className="ms">Paper account</div></div>
-      <div className="mc"><div className="ml">Total P&L</div><div className={`mv ${pnl>=0?"up":"down"}`}>{pnl>=0?"+":""}{pnl.toFixed(0)}</div><div className="ms">{pnlPct>=0?"+":""}{pnlPct.toFixed(2)}%</div></div>
-      <div className="mc"><div className="ml">Cash</div><div className="mv">${portfolio.cash.toLocaleString("en",{maximumFractionDigits:0})}</div><div className="ms">{((portfolio.cash/totalVal)*100).toFixed(0)}% of portfolio</div></div>
-      <div className="mc"><div className="ml">Invested</div><div className="mv">${posVal.toLocaleString("en",{maximumFractionDigits:0})}</div><div className="ms">{Object.keys(portfolio.positions).length} positions</div></div>
+// ── DASHBOARD ─────────────────────────────────────────────────
+function Dashboard({portfolio,stockData,sorted,pnl,pnlPct,posVal,optVal,totalVal,openOptions,onSelect,onTrade}){
+  const signals=sorted.filter(t=>stockData[t]?.scoring);
+  return<>
+    <div className="g2">
+      <div className="mc"><div className="ml">Total Value</div><div className="mv">${totalVal.toLocaleString("en",{maximumFractionDigits:0})}</div><div className="ms">Paper portfolio</div></div>
+      <div className="mc"><div className="ml">P&L</div><div className={`mv ${pnl>=0?"up":"dn"}`}>{pnl>=0?"+":""}{pnl.toFixed(0)}</div><div className="ms">{pnlPct>=0?"+":""}{pnlPct.toFixed(2)}%</div></div>
+      <div className="mc"><div className="ml">Cash</div><div className="mv">${(portfolio.cash||0).toLocaleString("en",{maximumFractionDigits:0})}</div><div className="ms">{(((portfolio.cash||0)/totalVal)*100).toFixed(0)}% liquid</div></div>
+      <div className="mc"><div className="ml">Invested</div><div className="mv">${posVal.toLocaleString("en",{maximumFractionDigits:0})}</div><div className="ms">{Object.keys(portfolio.positions||{}).length} positions + {openOptions.length} options</div></div>
     </div>
 
+    {/* OPTIONS SUMMARY */}
+    {openOptions.length>0&&<div className="card">
+      <div className="ctitle">📊 Open Options</div>
+      {openOptions.map((opt,i)=>{
+        const price=stockData[opt.ticker]?.quote?.price||opt.entryPrice;
+        let intrinsic=opt.type==="CALL"?Math.max(0,price-opt.strike):Math.max(0,opt.strike-price);
+        const curVal=(intrinsic+opt.premium*0.3)*opt.contracts*100;
+        const pnl=curVal-opt.totalCost;
+        const pnlPct=((curVal-opt.totalCost)/opt.totalCost)*100;
+        return<div key={i} className="opt-card">
+          <div className="opt-header">
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span className="opt-tk">{opt.ticker}</span>
+              <span className={`opt-type badge ${opt.type==="CALL"?"call-badge":"put-badge"}`}>{opt.type}</span>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div className={pnl>=0?"up":"dn"} style={{fontFamily:"var(--display)",fontWeight:700}}>{pnl>=0?"+":""}{pnl.toFixed(0)}</div>
+              <div style={{fontSize:9,color:"var(--dim)"}}>{pnlPct>=0?"+":""}{pnlPct.toFixed(0)}%</div>
+            </div>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--dim)"}}>
+            <span>Strike: ${opt.strike} · {opt.contracts} contracts</span>
+            <span>Exp: {opt.expiry}</span>
+          </div>
+        </div>;
+      })}
+    </div>}
+
     <div className="card">
-      <div className="card-title">⚡ AI Signals</div>
+      <div className="ctitle">⚡ AI Signals</div>
       {signals.length===0
-        ? <div className="loading"><div className="spinner"/><span>Analyzing stocks… rate-limit safe (12s/call)</span></div>
-        : sorted.map(ticker=>{
-            const d=stockData[ticker];
-            if(!d?.scoring) return <div key={ticker} className="stock-row" onClick={()=>onSelect(ticker)}>
-              <div className="sr-left"><div className="sr-ticker">{ticker}</div><div className="sr-name">Loading…</div></div>
-              <div className="spinner" style={{width:16,height:16,borderWidth:1.5}}/>
-            </div>;
-            const {quote,scoring}=d;
-            return <div key={ticker} className="stock-row" onClick={()=>onSelect(ticker)}>
-              <div className="sr-left">
-                <div className="sr-ticker">{ticker}</div>
-                <div style={{display:"flex",gap:5,alignItems:"center",marginTop:2}}>
-                  <span className="badge" style={{background:ACTION_BG[scoring.action],color:ACTION_COLORS[scoring.action]}}>{scoring.action}</span>
-                  <span style={{fontSize:9,color:"var(--text-dim)"}}>{scoring.positionPct}% size</span>
-                </div>
+        ?<div className="load"><div className="spin"/><span>Analyzing stocks… (rate-limit safe)</span></div>
+        :sorted.map(ticker=>{
+          const d=stockData[ticker];
+          if(!d?.scoring) return<div key={ticker} className="sr" onClick={()=>onSelect(ticker)}>
+            <div className="sr-l"><div className="sr-tk">{ticker}</div><div style={{fontSize:10,color:"var(--dim)"}}>Queued for analysis…</div></div>
+            <div className="spin" style={{width:16,height:16,borderWidth:1.5}}/>
+          </div>;
+          const{quote,scoring}=d;
+          return<div key={ticker} className="sr" onClick={()=>onSelect(ticker)}>
+            <div className="sr-l">
+              <div className="sr-tk">{ticker}</div>
+              <div style={{display:"flex",gap:5,alignItems:"center",marginTop:2,flexWrap:"wrap"}}>
+                <span className="badge" style={{background:AB[scoring.action],color:AC[scoring.action]}}>{scoring.action}</span>
+                <span style={{fontSize:9,color:"var(--dim)"}}>{scoring.positionPct}% size</span>
+                {(portfolio.options||{})[ticker+"_CALL"]?.status==="OPEN"&&<span className="badge call-badge">CALL</span>}
+                {(portfolio.options||{})[ticker+"_PUT"]?.status==="OPEN"&&<span className="badge put-badge">PUT</span>}
               </div>
-              <div className="sr-right">
-                <div className="sr-price">${quote?.price?.toFixed(2)||"—"}</div>
-                <div className={`sr-change ${(quote?.change||0)>=0?"up":"down"}`}>{(quote?.change||0)>=0?"▲":"▼"}{Math.abs(quote?.change||0).toFixed(2)}%</div>
-                <ScoreBar score={scoring.score}/>
-              </div>
-            </div>;
-          })
+            </div>
+            <div className="sr-r">
+              <div className="sr-pr">${quote?.price?.toFixed(2)||"—"}</div>
+              <div className={`${(quote?.change||0)>=0?"up":"dn"}`} style={{fontSize:11,fontWeight:600}}>{(quote?.change||0)>=0?"▲":"▼"}{Math.abs(quote?.change||0).toFixed(2)}%</div>
+              <ScoreBar score={scoring.score}/>
+            </div>
+          </div>;
+        })
       }
     </div>
 
-    {portfolio.trades.length>0&&<div className="card">
-      <div className="card-title">↺ Recent Trades</div>
-      {portfolio.trades.slice(0,5).map(t=><div key={t.id} className="trade-row">
+    {(portfolio.trades||[]).length>0&&<div className="card">
+      <div className="ctitle">↺ Recent Activity</div>
+      {(portfolio.trades||[]).slice(0,6).map(t=><div key={t.id} className="trow">
         <div>
-          <span style={{fontFamily:"var(--font-display)",fontWeight:800,color:"#fff",marginRight:8}}>{t.ticker}</span>
-          <span style={{color:t.side==="BUY"?"var(--green)":"var(--red)",fontWeight:700,fontSize:11}}>{t.side}</span>
-          <span style={{color:"var(--text-muted)",fontSize:11,marginLeft:8}}>{t.quantity} @ ${t.fillPrice}</span>
+          <span style={{fontFamily:"var(--display)",fontWeight:800,color:"#fff",marginRight:7}}>{t.ticker}</span>
+          <span style={{color:t.side.includes("BUY")?"var(--green)":"var(--red)",fontWeight:700,fontSize:10,marginRight:7}}>{t.side}</span>
+          {t.source==="AUTO"&&<span className="badge" style={{background:"rgba(168,85,247,.15)",color:"var(--purple)"}}>AUTO</span>}
+          {t.type==="OPTION"&&<span className="badge" style={{background:"rgba(59,158,255,.12)",color:"var(--accent)",marginLeft:4}}>OPT</span>}
         </div>
         <div style={{textAlign:"right"}}>
-          <div style={{fontSize:12,fontWeight:600,color:"var(--text)"}}>${t.total.toFixed(0)}</div>
-          <div style={{fontSize:9,color:"var(--text-dim)"}}>{new Date(t.timestamp).toLocaleTimeString()}</div>
+          <div style={{fontSize:12,fontWeight:600,color:"var(--text)"}}>${(t.total||0).toFixed(0)}</div>
+          <div style={{fontSize:9,color:"var(--dim)"}}>{new Date(t.timestamp).toLocaleTimeString()}</div>
         </div>
       </div>)}
     </div>}
   </>;
 }
 
-function StockView({ticker,data,position,onTrade}) {
-  if(!data) return <div className="card"><div className="loading"><div className="spinner"/><span>Loading {ticker}…</span></div></div>;
-  const {quote,fund:f,tech:t,sent,scoring}=data;
-  const sc = scoring.score>=70?"var(--green)":scoring.score>=45?"var(--accent)":"var(--red)";
-  return <>
+// ── STOCK DETAIL ──────────────────────────────────────────────
+function StockView({ticker,data,position,options,onTrade}){
+  const [tab,setTab]=useState("overview");
+  if(!data) return<div className="card"><div className="load"><div className="spin"/><span>Loading {ticker}…</span></div></div>;
+  const{quote,fund:f,tech:t,sent,scoring}=data;
+  const sc=scoring.score>=70?"var(--green)":scoring.score>=45?"var(--accent)":"var(--red)";
+  const callOpt=(options||{})[ticker+"_CALL"];
+  const putOpt=(options||{})[ticker+"_PUT"];
+
+  return<>
     <div className="card">
-      <div className="stock-detail-header">
-        <div className="sd-ticker">{ticker}</div>
-        <div className="sd-name">{f?.Name||ticker} · {f?.Exchange||""}</div>
-        <div className="sd-price-row">
-          <div className="sd-price">${quote?.price?.toFixed(2)||"—"}</div>
-          <div className={`sd-change ${(quote?.change||0)>=0?"up":"down"}`}>{(quote?.change||0)>=0?"▲":"▼"}{Math.abs(quote?.change||0).toFixed(2)}%</div>
+      <div style={{paddingBottom:14,borderBottom:"1px solid var(--border)",marginBottom:14}}>
+        <div className="dtk">{ticker}</div>
+        <div className="dnm">{f?.Name||ticker} · {f?.Exchange||""}</div>
+        <div style={{display:"flex",alignItems:"baseline",gap:10}}>
+          <div className="dpr">${quote?.price?.toFixed(2)||"—"}</div>
+          <div className={`dch ${(quote?.change||0)>=0?"up":"dn"}`}>{(quote?.change||0)>=0?"▲":"▼"}{Math.abs(quote?.change||0).toFixed(2)}%</div>
         </div>
         <div style={{display:"flex",gap:6,marginTop:10,flexWrap:"wrap",alignItems:"center"}}>
-          <span className="badge" style={{background:ACTION_BG[scoring.action],color:ACTION_COLORS[scoring.action],fontSize:11,padding:"3px 10px"}}>{scoring.action}</span>
-          {f?.Sector&&<span style={{fontSize:10,padding:"3px 8px",background:"var(--surface3)",borderRadius:4,color:"var(--text-muted)"}}>{f.Sector}</span>}
-          {position&&<span style={{fontSize:10,padding:"3px 8px",background:"rgba(59,158,255,0.12)",borderRadius:4,color:"var(--accent)"}}>{position.quantity} shares held</span>}
-          <button className="btn-trade" onClick={()=>onTrade({ticker})}>Trade</button>
+          <span className="badge" style={{background:AB[scoring.action],color:AC[scoring.action],fontSize:11,padding:"3px 10px"}}>{scoring.action}</span>
+          {f?.Sector&&<span style={{fontSize:10,padding:"3px 8px",background:"var(--surface3)",borderRadius:4,color:"var(--muted)"}}>{f.Sector}</span>}
+          {position&&<span className="badge" style={{background:"rgba(59,158,255,.12)",color:"var(--accent)"}}>{position.quantity} shares held</span>}
+          {callOpt?.status==="OPEN"&&<span className="badge call-badge">{callOpt.contracts} CALL open</span>}
+          {putOpt?.status==="OPEN"&&<span className="badge put-badge">{putOpt.contracts} PUT open</span>}
+          <button className="btrade" onClick={()=>onTrade({ticker})}>Trade</button>
         </div>
       </div>
 
-      <div className="grid2" style={{gap:10}}>
-        <ConvictionCircle score={scoring.score}/>
-        <div style={{display:"flex",flexDirection:"column",gap:0,background:"var(--surface2)",borderRadius:10,padding:12,border:"1px solid var(--border)"}}>
-          <div style={{fontSize:10,color:"var(--text-dim)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Technicals</div>
-          <div className="trow"><span className="trow-label">RSI</span><span className="trow-value" style={{color:t?.rsi<30?"var(--green)":t?.rsi>70?"var(--red)":"var(--accent)"}}>{t?.rsi?.toFixed(1)||"—"}</span></div>
-          <div className="trow"><span className="trow-label">MACD</span><span className="trow-value" style={{color:t?.macdSignal==="BULLISH"?"var(--green)":t?.macdSignal==="BEARISH"?"var(--red)":"var(--text-muted)"}}>{t?.macdSignal||"—"}</span></div>
-          <div className="trow"><span className="trow-label">SMA20</span><span className="trow-value">${t?.sma20?.toFixed(2)||"—"}</span></div>
-          <div className="trow"><span className="trow-label">SMA50</span><span className="trow-value">${t?.sma50?.toFixed(2)||"—"}</span></div>
+      <div className="tab-row">
+        {["overview","technicals","fundamentals","options","news"].map(tab2=>
+          <div key={tab2} className={`tab ${tab===tab2?"act":""}`} onClick={()=>setTab(tab2)}>{tab2}</div>
+        )}
+      </div>
+
+      {tab==="overview"&&<div className="g2">
+        <Conviction score={scoring.score}/>
+        <div style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:10,padding:12}}>
+          <div style={{fontSize:10,color:"var(--dim)",textTransform:"uppercase",letterSpacing:".5px",marginBottom:8}}>Quick Stats</div>
+          <div className="tr"><span className="trl">RSI</span><span className="trv" style={{color:t?.rsi<30?"var(--green)":t?.rsi>70?"var(--red)":"var(--accent)"}}>{t?.rsi?.toFixed(1)||"—"}</span></div>
+          <div className="tr"><span className="trl">MACD</span><span className="trv" style={{color:t?.macdSignal==="BULLISH"?"var(--green)":t?.macdSignal==="BEARISH"?"var(--red)":"var(--muted)"}}>{t?.macdSignal||"—"}</span></div>
+          <div className="tr"><span className="trl">Sentiment</span><span className="trv" style={{color:sent?.score>0?"var(--green)":sent?.score<0?"var(--red)":"var(--muted)"}}>{sent?.label||"—"}</span></div>
+          <div className="tr"><span className="trl">Suggested Size</span><span className="trv ac">{scoring.positionPct}%</span></div>
         </div>
-      </div>
+      </div>}
+
+      {tab==="technicals"&&<div>
+        <div className="tr"><span className="trl">RSI (14)</span><span className="trv" style={{color:t?.rsi<30?"var(--green)":t?.rsi>70?"var(--red)":"var(--muted)"}}>{t?.rsi?.toFixed(1)||"—"}{t?.rsi<30?" — Oversold":t?.rsi>70?" — Overbought":""}</span></div>
+        <div className="tr"><span className="trl">MACD Signal</span><span className="trv" style={{color:t?.macdSignal==="BULLISH"?"var(--green)":t?.macdSignal==="BEARISH"?"var(--red)":"var(--muted)"}}>{t?.macdSignal||"—"}</span></div>
+        <div className="tr"><span className="trl">SMA 20</span><span className="trv">${t?.sma20?.toFixed(2)||"—"} {t?.currentPrice>t?.sma20?"↑ Above":"↓ Below"}</span></div>
+        <div className="tr"><span className="trl">SMA 50</span><span className="trv">${t?.sma50?.toFixed(2)||"—"} {t?.currentPrice>t?.sma50?"↑ Above":"↓ Below"}</span></div>
+        <div className="tr"><span className="trl">Trend</span><span className="trv" style={{color:t?.currentPrice>t?.sma20&&t?.sma20>t?.sma50?"var(--green)":"var(--red)"}}>{t?.currentPrice>t?.sma20&&t?.sma20>t?.sma50?"Bullish Uptrend":"Bearish / No trend"}</span></div>
+      </div>}
+
+      {tab==="fundamentals"&&<div>
+        <div className="tr"><span className="trl">P/E Ratio</span><span className="trv">{parseFloat(f?.PERatio||0).toFixed(1)||"—"}</span></div>
+        <div className="tr"><span className="trl">EPS Growth (QoQ)</span><span className="trv" style={{color:parseFloat(f?.QuarterlyEarningsGrowthYOY||0)>0?"var(--green)":"var(--red)"}}>{f?.QuarterlyEarningsGrowthYOY?(parseFloat(f.QuarterlyEarningsGrowthYOY)*100).toFixed(1)+"%":"—"}</span></div>
+        <div className="tr"><span className="trl">Revenue Growth</span><span className="trv" style={{color:parseFloat(f?.QuarterlyRevenueGrowthYOY||0)>0?"var(--green)":"var(--red)"}}>{f?.QuarterlyRevenueGrowthYOY?(parseFloat(f.QuarterlyRevenueGrowthYOY)*100).toFixed(1)+"%":"—"}</span></div>
+        <div className="tr"><span className="trl">Profit Margin</span><span className="trv">{f?.ProfitMargin?(parseFloat(f.ProfitMargin)*100).toFixed(1)+"%":"—"}</span></div>
+        <div className="tr"><span className="trl">Market Cap</span><span className="trv">{f?.MarketCapitalization?"$"+(parseInt(f.MarketCapitalization)/1e9).toFixed(1)+"B":"—"}</span></div>
+        <div className="tr"><span className="trl">Debt / Equity</span><span className="trv">{parseFloat(f?.DebtToEquityRatio||0).toFixed(2)||"—"}</span></div>
+        <div className="tr"><span className="trl">Beta</span><span className="trv">{f?.Beta||"—"}</span></div>
+      </div>}
+
+      {tab==="options"&&<div>
+        <div style={{fontSize:11,color:"var(--muted)",marginBottom:12,lineHeight:1.7}}>
+          Options are auto-bought when conviction score ≥ 85 (CALL) or ≤ 20 (PUT). Premium = 2% of stock price. Auto-closed at +50% profit or -70% loss.
+        </div>
+        {[callOpt,putOpt].filter(Boolean).map((opt,i)=>{
+          if(!opt) return null;
+          const price=quote?.price||opt.entryPrice;
+          let intrinsic=opt.type==="CALL"?Math.max(0,price-opt.strike):Math.max(0,opt.strike-price);
+          const curVal=(intrinsic+opt.premium*0.3)*opt.contracts*100;
+          const pnl=curVal-opt.totalCost;
+          const pp=((curVal-opt.totalCost)/opt.totalCost)*100;
+          return<div key={i} style={{background:"var(--surface2)",border:"1px solid var(--border)",borderRadius:8,padding:12,marginBottom:8}}>
+            <div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}>
+              <span className={`opt-type badge ${opt.type==="CALL"?"call-badge":"put-badge"}`}>{opt.type} · {opt.contracts} contracts · {opt.status}</span>
+              <span className={pnl>=0?"up":"dn"} style={{fontWeight:700}}>{pnl>=0?"+":""}{pnl.toFixed(0)} ({pp>=0?"+":""}{pp.toFixed(0)}%)</span>
+            </div>
+            <div className="tr"><span className="trl">Strike</span><span className="trv">${opt.strike}</span></div>
+            <div className="tr"><span className="trl">Premium Paid</span><span className="trv">${opt.totalCost.toFixed(0)}</span></div>
+            <div className="tr"><span className="trl">Current Value</span><span className="trv">${curVal.toFixed(0)}</span></div>
+            <div className="tr"><span className="trl">Expiry</span><span className="trv">{opt.expiry}</span></div>
+          </div>;
+        })}
+        {!callOpt&&!putOpt&&<div className="empty">No open options on {ticker}.<br/>Auto-buy triggers at score ≥85 (CALL) or ≤20 (PUT).</div>}
+      </div>}
+
+      {tab==="news"&&<div>
+        <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--surface2)",borderRadius:8,marginBottom:12}}>
+          <div style={{fontFamily:"var(--display)",fontSize:16,fontWeight:700,color:sent?.score>0?"var(--green)":sent?.score<-0.2?"var(--red)":"var(--accent)"}}>{sent?.label||"Neutral"}</div>
+          <div style={{flex:1,height:6,background:"var(--surface3)",borderRadius:3,overflow:"hidden"}}>
+            <div style={{height:"100%",width:`${Math.min(100,Math.abs(sent?.score||0)*100)}%`,background:(sent?.score||0)>0?"var(--green)":"var(--red)",borderRadius:3}}/>
+          </div>
+          <div style={{fontSize:10,color:"var(--dim)"}}>{(sent?.score||0).toFixed(3)}</div>
+        </div>
+        {(sent?.articles||[]).map((a,i)=>{
+          const ts=a.ticker_sentiment?.find(x=>x.ticker===ticker);
+          const s=parseFloat(ts?.ticker_sentiment_score||"0");
+          return<div key={i} className="ni">
+            <div className="nt">{a.title}</div>
+            <div className="nm">
+              <span>{a.source}</span><span>·</span><span>{a.time_published?.slice(0,8)}</span>
+              {ts&&<span className="badge" style={{background:s>0?"rgba(0,210,106,.15)":s<0?"rgba(255,71,87,.15)":"rgba(59,158,255,.1)",color:s>0?"var(--green)":s<0?"var(--red)":"var(--accent)"}}>{ts.ticker_sentiment_label}</span>}
+            </div>
+          </div>;
+        })}
+        {!sent?.articles?.length&&<div className="empty">No recent news.</div>}
+      </div>}
     </div>
 
+    {/* AI REASONING */}
     <div className="card">
-      <div className="card-title">📊 Fundamentals</div>
-      <div className="trow"><span className="trow-label">P/E Ratio</span><span className="trow-value">{parseFloat(f?.PERatio||0).toFixed(1)||"—"}</span></div>
-      <div className="trow"><span className="trow-label">EPS Growth</span><span className="trow-value" style={{color:parseFloat(f?.QuarterlyEarningsGrowthYOY||0)>0?"var(--green)":"var(--red)"}}>{f?.QuarterlyEarningsGrowthYOY?(parseFloat(f.QuarterlyEarningsGrowthYOY)*100).toFixed(1)+"%":"—"}</span></div>
-      <div className="trow"><span className="trow-label">Rev Growth</span><span className="trow-value" style={{color:parseFloat(f?.QuarterlyRevenueGrowthYOY||0)>0?"var(--green)":"var(--red)"}}>{f?.QuarterlyRevenueGrowthYOY?(parseFloat(f.QuarterlyRevenueGrowthYOY)*100).toFixed(1)+"%":"—"}</span></div>
-      <div className="trow"><span className="trow-label">Profit Margin</span><span className="trow-value">{f?.ProfitMargin?(parseFloat(f.ProfitMargin)*100).toFixed(1)+"%":"—"}</span></div>
-      <div className="trow"><span className="trow-label">Market Cap</span><span className="trow-value">{f?.MarketCapitalization?"$"+(parseInt(f.MarketCapitalization)/1e9).toFixed(1)+"B":"—"}</span></div>
-      <div className="trow"><span className="trow-label">Debt/Equity</span><span className="trow-value">{parseFloat(f?.DebtToEquityRatio||0).toFixed(2)||"—"}</span></div>
-    </div>
-
-    <div className="card">
-      <div className="card-title">🧠 AI Reasoning</div>
-      <div style={{fontSize:11,color:"var(--text-muted)",lineHeight:1.7,marginBottom:12}}>
-        Conviction score: <strong style={{color:sc}}>{scoring.score}/100</strong> · Action: <strong style={{color:ACTION_COLORS[scoring.action]}}>{scoring.action}</strong> · Suggested size: <strong style={{color:"var(--accent)"}}>{scoring.positionPct}%</strong>
+      <div className="ctitle">🧠 AI Reasoning</div>
+      <div style={{fontSize:11,color:"var(--muted)",lineHeight:1.7,marginBottom:12}}>
+        Score <strong style={{color:sc}}>{scoring.score}/100</strong> · Action <strong style={{color:AC[scoring.action]}}>{scoring.action}</strong> · Suggested size <strong className="ac">{scoring.positionPct}%</strong>
       </div>
-      {scoring.rationale.map((r,i)=><div key={i} className="reasoning-item">
-        <div className="rdot" style={{background:r.includes("Strong")||r.includes("bull")||r.includes("Attractive")?"var(--green)":r.includes("risk")||r.includes("Declining")||r.includes("bear")?"var(--red)":"var(--accent)"}}/>
+      {scoring.rationale.map((r,i)=><div key={i} className="ri">
+        <div className="rd" style={{background:r.includes("Strong")||r.includes("bull")||r.includes("Attractive")||r.includes("Oversold")?"var(--green)":r.includes("risk")||r.includes("Declining")||r.includes("bear")||r.includes("Overbought")?"var(--red)":"var(--accent)"}}/>
         {r}
       </div>)}
     </div>
+  </>;
+}
 
-    {sent?.articles?.length>0&&<div className="card">
-      <div className="card-title">📰 News & Sentiment</div>
-      <div style={{display:"flex",alignItems:"center",gap:10,padding:"10px 12px",background:"var(--surface2)",borderRadius:8,marginBottom:12}}>
-        <div style={{fontFamily:"var(--font-display)",fontSize:16,fontWeight:700,color:(sent.score||0)>0?"var(--green)":(sent.score||0)<-0.2?"var(--red)":"var(--accent)"}}>{sent.label}</div>
-        <div style={{flex:1,height:6,background:"var(--surface3)",borderRadius:3,overflow:"hidden"}}>
-          <div style={{height:"100%",width:`${Math.min(100,Math.abs(sent.score||0)*100)}%`,background:(sent.score||0)>0?"var(--green)":"var(--red)",borderRadius:3}}/>
-        </div>
-        <div style={{fontSize:10,color:"var(--text-dim)"}}>{(sent.score||0).toFixed(3)}</div>
-      </div>
-      {sent.articles.map((a,i)=>{
-        const ts=a.ticker_sentiment?.find(x=>x.ticker===ticker);
-        const s=parseFloat(ts?.ticker_sentiment_score||"0");
-        return <div key={i} className="news-item">
-          <div className="news-title">{a.title}</div>
-          <div className="news-meta">
-            <span>{a.source}</span><span>·</span><span>{a.time_published?.slice(0,8)}</span>
-            {ts&&<span className="badge" style={{background:s>0?"rgba(0,210,106,.15)":s<0?"rgba(255,71,87,.15)":"rgba(59,158,255,.1)",color:s>0?"var(--green)":s<0?"var(--red)":"var(--accent)"}}>{ts.ticker_sentiment_label||"Neutral"}</span>}
+// ── POSITIONS ─────────────────────────────────────────────────
+function PositionsView({portfolio,stockData,onSelect,onTrade}){
+  const positions=Object.entries(portfolio.positions||{});
+  const options=Object.values(portfolio.options||{}).filter(o=>o.status==="OPEN");
+  if(!positions.length&&!options.length) return<div className="card"><div className="empty">No open positions or options yet.</div></div>;
+  return<>
+    {positions.length>0&&<div className="card">
+      <div className="ctitle">⊞ Stock Positions</div>
+      {positions.map(([ticker,pos])=>{
+        const price=stockData[ticker]?.quote?.price||pos.avgCost;
+        const mv=price*pos.quantity,cost=pos.avgCost*pos.quantity,pnl=mv-cost,pp=(pnl/cost)*100;
+        const action=stockData[ticker]?.scoring?.action;
+        return<div key={ticker} className="pr" onClick={()=>onSelect(ticker)}>
+          <div className="pt">
+            <div><div className="ptk">{ticker}</div><div className="psh">{pos.quantity} shares @ avg ${pos.avgCost.toFixed(2)}</div></div>
+            <div>
+              <div className={`ppnl ${pnl>=0?"up":"dn"}`}>{pnl>=0?"+":""}{pnl.toFixed(0)}</div>
+              <div className={`ppp ${pp>=0?"up":"dn"}`}>{pp>=0?"+":""}{pp.toFixed(2)}%</div>
+            </div>
+          </div>
+          <div className="pb">
+            <div className="pd">Now ${price.toFixed(2)} · Val ${mv.toLocaleString("en",{maximumFractionDigits:0})}</div>
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              {action&&<span className="badge" style={{background:AB[action],color:AC[action]}}>{action}</span>}
+              <button className="btrade" style={{fontSize:10,padding:"5px 12px"}} onClick={e=>{e.stopPropagation();onTrade({ticker})}}>Trade</button>
+            </div>
+          </div>
+        </div>;
+      })}
+    </div>}
+
+    {options.length>0&&<div className="card">
+      <div className="ctitle">📊 Options Positions</div>
+      {options.map((opt,i)=>{
+        const price=stockData[opt.ticker]?.quote?.price||opt.entryPrice;
+        let intrinsic=opt.type==="CALL"?Math.max(0,price-opt.strike):Math.max(0,opt.strike-price);
+        const curVal=(intrinsic+opt.premium*0.3)*opt.contracts*100;
+        const pnl=curVal-opt.totalCost,pp=((curVal-opt.totalCost)/opt.totalCost)*100;
+        return<div key={i} className="opt-card">
+          <div className="opt-header">
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <span className="opt-tk">{opt.ticker}</span>
+              <span className={`opt-type badge ${opt.type==="CALL"?"call-badge":"put-badge"}`}>{opt.type}</span>
+              <span style={{fontSize:9,color:"var(--dim)"}}>{opt.contracts} contracts</span>
+            </div>
+            <div style={{textAlign:"right"}}>
+              <div className={pnl>=0?"up":"dn"} style={{fontFamily:"var(--display)",fontWeight:700}}>{pnl>=0?"+":""}{pnl.toFixed(0)}</div>
+              <div style={{fontSize:9,color:"var(--dim)"}}>{pp>=0?"+":""}{pp.toFixed(0)}%</div>
+            </div>
+          </div>
+          <div style={{display:"flex",justifyContent:"space-between",fontSize:10,color:"var(--dim)",marginTop:4}}>
+            <span>Strike ${opt.strike} · Cost ${opt.totalCost.toFixed(0)} · Now ${curVal.toFixed(0)}</span>
+            <span>Exp {opt.expiry}</span>
           </div>
         </div>;
       })}
@@ -550,44 +877,29 @@ function StockView({ticker,data,position,onTrade}) {
   </>;
 }
 
-function PositionsView({portfolio,stockData,onSelect,onTrade}) {
-  const positions=Object.entries(portfolio.positions);
-  if(!positions.length) return <div className="card"><div className="empty-state">No open positions yet.<br/>Execute trades from the dashboard.</div></div>;
-  return <div className="card">
-    <div className="card-title">⊞ Open Positions</div>
-    {positions.map(([ticker,pos])=>{
-      const price=stockData[ticker]?.quote?.price||pos.avgCost;
-      const mv=price*pos.quantity, cost=pos.avgCost*pos.quantity, pnl=mv-cost, pnlPct=(pnl/cost)*100;
-      return <div key={ticker} className="pos-row" onClick={()=>onSelect(ticker)}>
-        <div className="pos-top">
-          <div><div className="pos-ticker">{ticker}</div><div className="pos-shares">{pos.quantity} shares</div></div>
-          <div>
-            <div className={`pos-pnl ${pnl>=0?"up":"down"}`}>{pnl>=0?"+":""}{pnl.toFixed(0)}</div>
-            <div className={`pos-pnlpct ${pnlPct>=0?"up":"down"}`}>{pnlPct>=0?"+":""}{pnlPct.toFixed(2)}%</div>
-          </div>
-        </div>
-        <div className="pos-bottom">
-          <div className="pos-detail">Avg ${pos.avgCost.toFixed(2)} · Now ${price.toFixed(2)} · Val ${mv.toLocaleString("en",{maximumFractionDigits:0})}</div>
-          <button className="btn-trade" style={{fontSize:10,padding:"5px 12px"}} onClick={e=>{e.stopPropagation();onTrade({ticker})}}>Trade</button>
-        </div>
-      </div>;
-    })}
-  </div>;
-}
-
-function TradesView({trades}) {
-  if(!trades.length) return <div className="card"><div className="empty-state">No trades yet.<br/>Start trading from the Markets tab.</div></div>;
-  return <div className="card">
-    <div className="card-title">⇄ Trade History</div>
-    {trades.map(t=><div key={t.id} className="trade-row">
+// ── HISTORY ───────────────────────────────────────────────────
+function HistoryView({trades}){
+  const [filter,setFilter]=useState("ALL");
+  if(!trades.length) return<div className="card"><div className="empty">No trades yet.</div></div>;
+  const filtered=trades.filter(t=>filter==="ALL"||t.type===filter||(filter==="AUTO"&&t.source==="AUTO")||(filter==="MANUAL"&&t.source!=="AUTO"));
+  return<div className="card">
+    <div className="ctitle">⇄ Trade History ({trades.length})</div>
+    <div className="tab-row">
+      {["ALL","MARKET","OPTION","AUTO","MANUAL"].map(f=>
+        <div key={f} className={`tab ${filter===f?"act":""}`} onClick={()=>setFilter(f)}>{f}</div>
+      )}
+    </div>
+    {filtered.map(t=><div key={t.id} className="trow">
       <div>
-        <span style={{fontFamily:"var(--font-display)",fontWeight:800,fontSize:14,color:"#fff",marginRight:8}}>{t.ticker}</span>
-        <span style={{color:t.side==="BUY"?"var(--green)":"var(--red)",fontWeight:700,fontSize:11,marginRight:8}}>{t.side}</span>
-        <span style={{color:"var(--text-muted)",fontSize:11}}>{t.quantity} @ ${t.fillPrice}</span>
+        <span style={{fontFamily:"var(--display)",fontWeight:800,fontSize:14,color:"#fff",marginRight:7}}>{t.ticker}</span>
+        <span style={{color:t.side.includes("BUY")?"var(--green)":"var(--red)",fontWeight:700,fontSize:10,marginRight:7}}>{t.side}</span>
+        {t.source==="AUTO"&&<span className="badge" style={{background:"rgba(168,85,247,.15)",color:"var(--purple)"}}>AUTO</span>}
+        {t.type==="OPTION"&&<span className="badge" style={{background:"rgba(59,158,255,.12)",color:"var(--accent)",marginLeft:4}}>OPT</span>}
+        <div style={{fontSize:9,color:"var(--dim)",marginTop:2}}>{t.quantity} @ ${t.fillPrice}</div>
       </div>
       <div style={{textAlign:"right"}}>
-        <div style={{fontSize:13,fontWeight:700,color:"var(--text)"}}>${t.total.toFixed(0)}</div>
-        <div style={{fontSize:9,color:"var(--text-dim)"}}>{new Date(t.timestamp).toLocaleString()}</div>
+        <div style={{fontSize:13,fontWeight:700,color:"var(--text)"}}>${(t.total||0).toFixed(0)}</div>
+        <div style={{fontSize:9,color:"var(--dim)"}}>{new Date(t.timestamp).toLocaleString()}</div>
       </div>
     </div>)}
   </div>;

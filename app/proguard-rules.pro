@@ -1,1 +1,2 @@
 -keep class com.alphaedge.app.** { *; }
+-keep class org.json.** { *; }
